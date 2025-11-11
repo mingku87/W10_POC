@@ -1,0 +1,418 @@
+﻿using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+/// <summary>
+/// 한 번에 모든 UI를 자동 생성하는 마스터 설정 스크립트
+/// GameObject에 추가하고 Inspector에서 우클릭 -> "전체 UI 자동 생성" 클릭
+/// TextMeshPro 사용
+/// </summary>
+public class GameSetupMaster : MonoBehaviour
+{
+    [Header("자동 생성 설정")]
+    [Tooltip("제품 개수")]
+    public int productCount = 5;
+
+    [Tooltip("제품 간격")]
+    public float productSpacing = 2f;
+
+    [Tooltip("첫 제품 위치")]
+    public Vector3 startPosition = new Vector3(-4, 0, 0);
+
+    [Header("폰트 설정 (TextMeshPro)")]
+    [Tooltip("TextMeshPro 폰트 에셋 (비워두면 기본 폰트 사용)")]
+    public TMP_FontAsset customFont;
+
+    [ContextMenu("전체 UI 한번에 자동 생성")]
+    public void GenerateAllUI()
+    {
+#if UNITY_EDITOR
+        Debug.Log("=== 게임 UI 자동 생성 시작 ===");
+
+        CreateCCTVSystem();
+        CreateBarcodeInventory();
+        CreateProductDetailPanel();
+        CreateProducts();
+
+        Debug.Log("=== 모든 UI 생성 완료! 플레이 버튼을 눌러 테스트하세요! ===");
+#endif
+    }
+
+    void CreateCCTVSystem()
+    {
+#if UNITY_EDITOR
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null)
+        {
+            GameObject canvasObj = new GameObject("Canvas");
+            canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObj.AddComponent<CanvasScaler>();
+            canvasObj.AddComponent<GraphicRaycaster>();
+
+            if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
+            {
+                GameObject eventSystem = new GameObject("EventSystem");
+                eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
+                eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            }
+
+            Debug.Log("Canvas 및 EventSystem 생성");
+        }
+
+        GameObject cctvManager = new GameObject("CCTVManager");
+        GameObject lightObj = new GameObject("CCTVLight");
+        lightObj.transform.SetParent(canvas.transform, false);
+
+        Image image = lightObj.AddComponent<Image>();
+        image.color = Color.green;
+
+        RectTransform rectTransform = lightObj.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(1, 1);
+        rectTransform.anchorMax = new Vector2(1, 1);
+        rectTransform.pivot = new Vector2(1, 1);
+        rectTransform.anchoredPosition = new Vector2(-50, -50);
+        rectTransform.sizeDelta = new Vector2(30, 30);
+
+        CCTVController controller = cctvManager.AddComponent<CCTVController>();
+        controller.lightImage = image;
+        controller.redColor = Color.red;
+        controller.greenColor = Color.green;
+        controller.watchDuration = 3f;
+        controller.idleDuration = 5f;
+
+        Debug.Log("1. CCTV 시스템 생성 완료");
+#endif
+    }
+
+    void CreateBarcodeInventory()
+    {
+#if UNITY_EDITOR
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+
+        GameObject panelObj = new GameObject("BarcodeInventoryPanel");
+        panelObj.transform.SetParent(canvas.transform, false);
+
+        Image panelImage = panelObj.AddComponent<Image>();
+        panelImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+
+        RectTransform panelRect = panelObj.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0);
+        panelRect.anchorMax = new Vector2(0.5f, 0);
+        panelRect.pivot = new Vector2(0.5f, 0);
+        panelRect.anchoredPosition = new Vector2(0, 10);
+        panelRect.sizeDelta = new Vector2(800, 120);
+
+        GridLayoutGroup grid = panelObj.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(70, 50);
+        grid.spacing = new Vector2(10, 10);
+        grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+        grid.childAlignment = TextAnchor.MiddleCenter;
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 10;
+
+        GameObject barcodePrefab = CreateBarcodePrefab(canvas);
+
+        GameObject inventoryManager = new GameObject("BarcodeInventoryManager");
+        BarcodeInventory inventory = inventoryManager.AddComponent<BarcodeInventory>();
+        inventory.barcodePrefab = barcodePrefab;
+        inventory.barcodeContainer = panelObj.transform;
+        inventory.gridLayout = grid;
+
+        Debug.Log("2. 바코드 인벤토리 생성 완료");
+#endif
+    }
+
+    GameObject CreateBarcodePrefab(Canvas canvas)
+    {
+#if UNITY_EDITOR
+        string prefabPath = "Assets/Prefabs";
+        if (!UnityEditor.AssetDatabase.IsValidFolder(prefabPath))
+        {
+            UnityEditor.AssetDatabase.CreateFolder("Assets", "Prefabs");
+        }
+
+        GameObject barcodeObj = new GameObject("BarcodePrefab");
+        barcodeObj.transform.SetParent(canvas.transform, false);
+
+        Image bgImage = barcodeObj.AddComponent<Image>();
+        bgImage.color = new Color(1f, 0.9f, 0.7f, 1f);
+
+        RectTransform rect = barcodeObj.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(70, 50);
+
+        DraggableBarcode draggable = barcodeObj.AddComponent<DraggableBarcode>();
+        barcodeObj.AddComponent<CanvasGroup>();
+
+        GameObject textObj = new GameObject("PriceText");
+        textObj.transform.SetParent(barcodeObj.transform, false);
+
+        Text text = textObj.AddComponent<Text>();
+        text.text = "1000won";
+        text.font = GetFont();
+        text.fontSize = 16;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.black;
+
+        RectTransform textRect = textObj.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+
+        draggable.priceText = text;
+
+        string fullPath = prefabPath + "/BarcodePrefab.prefab";
+        GameObject prefab = UnityEditor.PrefabUtility.SaveAsPrefabAsset(barcodeObj, fullPath);
+
+        DestroyImmediate(barcodeObj);
+
+        return prefab;
+#else
+        return null;
+#endif
+    }
+
+    void CreateProductDetailPanel()
+    {
+#if UNITY_EDITOR
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+
+        GameObject mainPanel = new GameObject("ProductDetailPanel");
+        mainPanel.transform.SetParent(canvas.transform, false);
+
+        Image mainPanelImage = mainPanel.AddComponent<Image>();
+        mainPanelImage.color = new Color(0, 0, 0, 0.78f);
+
+        RectTransform mainRect = mainPanel.GetComponent<RectTransform>();
+        mainRect.anchorMin = Vector2.zero;
+        mainRect.anchorMax = Vector2.one;
+        mainRect.offsetMin = Vector2.zero;
+        mainRect.offsetMax = Vector2.zero;
+
+        GameObject infoPanel = new GameObject("ProductInfoPanel");
+        infoPanel.transform.SetParent(mainPanel.transform, false);
+
+        Image infoPanelImage = infoPanel.AddComponent<Image>();
+        infoPanelImage.color = Color.white;
+
+        RectTransform infoRect = infoPanel.GetComponent<RectTransform>();
+        infoRect.anchorMin = new Vector2(0.5f, 0.5f);
+        infoRect.anchorMax = new Vector2(0.5f, 0.5f);
+        infoRect.pivot = new Vector2(0.5f, 0.5f);
+        infoRect.anchoredPosition = Vector2.zero;
+        infoRect.sizeDelta = new Vector2(400, 500);
+
+        GameObject imageObj = new GameObject("ProductImage");
+        imageObj.transform.SetParent(infoPanel.transform, false);
+        Image productImage = imageObj.AddComponent<Image>();
+        productImage.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+
+        RectTransform imageRect = imageObj.GetComponent<RectTransform>();
+        imageRect.anchorMin = new Vector2(0.5f, 1);
+        imageRect.anchorMax = new Vector2(0.5f, 1);
+        imageRect.pivot = new Vector2(0.5f, 1);
+        imageRect.anchoredPosition = new Vector2(0, -10);
+        imageRect.sizeDelta = new Vector2(300, 300);
+
+        GameObject nameTextObj = new GameObject("ProductNameText");
+        nameTextObj.transform.SetParent(infoPanel.transform, false);
+        Text nameText = nameTextObj.AddComponent<Text>();
+        nameText.text = "Product Name";
+        nameText.font = GetFont();
+        nameText.fontSize = 28;
+        nameText.alignment = TextAnchor.MiddleCenter;
+        nameText.color = Color.black;
+
+        RectTransform nameRect = nameTextObj.GetComponent<RectTransform>();
+        nameRect.anchorMin = new Vector2(0.5f, 1);
+        nameRect.anchorMax = new Vector2(0.5f, 1);
+        nameRect.pivot = new Vector2(0.5f, 1);
+        nameRect.anchoredPosition = new Vector2(0, -320);
+        nameRect.sizeDelta = new Vector2(350, 40);
+
+        GameObject priceTextObj = new GameObject("CurrentPriceText");
+        priceTextObj.transform.SetParent(infoPanel.transform, false);
+        Text priceText = priceTextObj.AddComponent<Text>();
+        priceText.text = "Current Price: 1000";
+        priceText.font = GetFont();
+        priceText.fontSize = 22;
+        priceText.alignment = TextAnchor.MiddleCenter;
+        priceText.color = Color.black;
+
+        RectTransform priceRect = priceTextObj.GetComponent<RectTransform>();
+        priceRect.anchorMin = new Vector2(0.5f, 1);
+        priceRect.anchorMax = new Vector2(0.5f, 1);
+        priceRect.pivot = new Vector2(0.5f, 1);
+        priceRect.anchoredPosition = new Vector2(0, -370);
+        priceRect.sizeDelta = new Vector2(350, 30);
+
+        GameObject dropZoneObj = new GameObject("BarcodeDropZone");
+        dropZoneObj.transform.SetParent(infoPanel.transform, false);
+        Image dropZoneImage = dropZoneObj.AddComponent<Image>();
+        dropZoneImage.color = new Color(0.6f, 0.8f, 1f, 0.5f);
+
+        RectTransform dropRect = dropZoneObj.GetComponent<RectTransform>();
+        dropRect.anchorMin = new Vector2(0.5f, 0);
+        dropRect.anchorMax = new Vector2(0.5f, 0);
+        dropRect.pivot = new Vector2(0.5f, 0);
+        dropRect.anchoredPosition = new Vector2(0, 80);
+        dropRect.sizeDelta = new Vector2(300, 100);
+
+        BarcodeDropZone dropZone = dropZoneObj.AddComponent<BarcodeDropZone>();
+
+        GameObject hintTextObj = new GameObject("DropHintText");
+        hintTextObj.transform.SetParent(dropZoneObj.transform, false);
+        Text hintText = hintTextObj.AddComponent<Text>();
+        hintText.text = "Drag barcode here";
+        hintText.font = GetFont();
+        hintText.fontSize = 16;
+        hintText.alignment = TextAnchor.MiddleCenter;
+        hintText.color = new Color(0.2f, 0.2f, 0.2f, 0.7f);
+
+        RectTransform hintRect = hintTextObj.GetComponent<RectTransform>();
+        hintRect.anchorMin = Vector2.zero;
+        hintRect.anchorMax = Vector2.one;
+        hintRect.offsetMin = Vector2.zero;
+        hintRect.offsetMax = Vector2.zero;
+
+        GameObject feedbackTextObj = new GameObject("FeedbackText");
+        feedbackTextObj.transform.SetParent(infoPanel.transform, false);
+        Text feedbackText = feedbackTextObj.AddComponent<Text>();
+        feedbackText.text = "";
+        feedbackText.font = GetFont();
+        feedbackText.fontSize = 20;
+        feedbackText.alignment = TextAnchor.MiddleCenter;
+        feedbackText.color = new Color(0, 0.7f, 0, 1);
+
+        RectTransform feedbackRect = feedbackTextObj.GetComponent<RectTransform>();
+        feedbackRect.anchorMin = new Vector2(0.5f, 0);
+        feedbackRect.anchorMax = new Vector2(0.5f, 0);
+        feedbackRect.pivot = new Vector2(0.5f, 0);
+        feedbackRect.anchoredPosition = new Vector2(0, 20);
+        feedbackRect.sizeDelta = new Vector2(350, 30);
+
+        dropZone.feedbackText = feedbackText;
+
+        GameObject buttonObj = new GameObject("CloseButton");
+        buttonObj.transform.SetParent(infoPanel.transform, false);
+        Image buttonImage = buttonObj.AddComponent<Image>();
+        buttonImage.color = new Color(0.8f, 0.3f, 0.3f, 1f);
+
+        Button closeButton = buttonObj.AddComponent<Button>();
+
+        RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(1, 1);
+        buttonRect.anchorMax = new Vector2(1, 1);
+        buttonRect.pivot = new Vector2(1, 1);
+        buttonRect.anchoredPosition = new Vector2(-10, -10);
+        buttonRect.sizeDelta = new Vector2(80, 40);
+
+        GameObject buttonTextObj = new GameObject("Text");
+        buttonTextObj.transform.SetParent(buttonObj.transform, false);
+        Text buttonText = buttonTextObj.AddComponent<Text>();
+        buttonText.text = "Close";
+        buttonText.font = GetFont();
+        buttonText.fontSize = 18;
+        buttonText.alignment = TextAnchor.MiddleCenter;
+        buttonText.color = Color.white;
+
+        RectTransform buttonTextRect = buttonTextObj.GetComponent<RectTransform>();
+        buttonTextRect.anchorMin = Vector2.zero;
+        buttonTextRect.anchorMax = Vector2.one;
+        buttonTextRect.offsetMin = Vector2.zero;
+        buttonTextRect.offsetMax = Vector2.zero;
+
+        ProductDetailPanel detailPanel = mainPanel.AddComponent<ProductDetailPanel>();
+        detailPanel.panelObject = mainPanel;
+        detailPanel.productImage = productImage;
+        detailPanel.productNameText = nameText;
+        detailPanel.currentPriceText = priceText;
+        detailPanel.closeButton = closeButton;
+        detailPanel.dropZone = dropZone;
+
+        mainPanel.SetActive(false);
+
+        Debug.Log("3. 제품 상세 패널 생성 완료");
+#endif
+    }
+
+    void CreateProducts()
+    {
+#if UNITY_EDITOR
+        string[] productNames = new string[] { "Snack", "Drink", "Ramen", "Fruit", "Bread" };
+        int[] productPrices = new int[] { 1000, 1500, 800, 2000, 1200 };
+
+        for (int i = 0; i < productCount && i < productNames.Length; i++)
+        {
+            Vector3 position = startPosition + Vector3.right * (productSpacing * i);
+            CreateSingleProduct(productNames[i], productPrices[i], position);
+        }
+
+        Debug.Log("4. 제품 5개 생성 완료");
+#endif
+    }
+
+    void CreateSingleProduct(string productName, int price, Vector3 position)
+    {
+#if UNITY_EDITOR
+        GameObject productObj = new GameObject("Product_" + productName);
+        productObj.transform.position = position;
+
+        SpriteRenderer spriteRenderer = productObj.AddComponent<SpriteRenderer>();
+        spriteRenderer.sprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        spriteRenderer.color = new Color(Random.Range(0.5f, 1f), Random.Range(0.5f, 1f), Random.Range(0.5f, 1f));
+
+        BoxCollider2D collider = productObj.AddComponent<BoxCollider2D>();
+        collider.size = new Vector2(1, 1);
+
+        GameObject canvasObj = new GameObject("Canvas");
+        canvasObj.transform.SetParent(productObj.transform, false);
+        canvasObj.transform.localPosition = new Vector3(0, -0.7f, 0);
+
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+
+        RectTransform canvasRect = canvasObj.GetComponent<RectTransform>();
+        canvasRect.sizeDelta = new Vector2(2, 1);
+        canvasRect.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+
+        GameObject nameTextObj = new GameObject("NameText");
+        nameTextObj.transform.SetParent(canvasObj.transform, false);
+        Text nameText = nameTextObj.AddComponent<Text>();
+        nameText.text = productName;
+        nameText.font = GetFont();
+        nameText.fontSize = 50;
+        nameText.alignment = TextAnchor.MiddleCenter;
+        nameText.color = Color.black;
+
+        RectTransform nameRect = nameTextObj.GetComponent<RectTransform>();
+        nameRect.anchorMin = new Vector2(0.5f, 1);
+        nameRect.anchorMax = new Vector2(0.5f, 1);
+        nameRect.pivot = new Vector2(0.5f, 1);
+        nameRect.anchoredPosition = new Vector2(0, -20);
+        nameRect.sizeDelta = new Vector2(200, 60);
+
+        GameObject priceTextObj = new GameObject("PriceText");
+        priceTextObj.transform.SetParent(canvasObj.transform, false);
+        Text priceText = priceTextObj.AddComponent<Text>();
+        priceText.text = price.ToString() + "W";
+        priceText.font = GetFont();
+        priceText.fontSize = 40;
+        priceText.alignment = TextAnchor.MiddleCenter;
+        priceText.color = new Color(0.2f, 0.2f, 0.2f);
+
+        RectTransform priceRect = priceTextObj.GetComponent<RectTransform>();
+        priceRect.anchorMin = new Vector2(0.5f, 1);
+        priceRect.anchorMax = new Vector2(0.5f, 1);
+        priceRect.pivot = new Vector2(0.5f, 1);
+        priceRect.anchoredPosition = new Vector2(0, -90);
+        priceRect.sizeDelta = new Vector2(200, 50);
+
+        ProductInteractable productScript = productObj.AddComponent<ProductInteractable>();
+        productScript.productData = new ProductData(productName, price);
+        productScript.nameText = nameText;
+        productScript.priceText = priceText;
+#endif
+    }
+}
