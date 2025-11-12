@@ -29,6 +29,9 @@ public class ProductDataManager : MonoBehaviour
     [Header("제품 데이터 목록")]
     [SerializeField] private List<ProductData> productList = new List<ProductData>();
 
+    [Header("브랜드 커버 목록")]
+    [SerializeField] private List<BrandData> brandList = new List<BrandData>();
+
     [Header("UI 프리팹")]
     [SerializeField] private GameObject productButtonPrefab; // 제품 버튼 프리팹
 
@@ -175,6 +178,55 @@ public class ProductDataManager : MonoBehaviour
             }
         }
         return realProducts;
+    }
+
+    /// <summary>
+    /// 가짜 제품 찾기 - ProductType과 BrandGrade가 일치하고 isFake가 true인 제품 반환
+    /// </summary>
+    /// <param name="productType">제품 타입</param>
+    /// <param name="targetBrand">목표 브랜드 등급</param>
+    /// <returns>조건에 맞는 가짜 제품 데이터, 없으면 null</returns>
+    public ProductData FindFakeProduct(ProductType productType, BrandGrade targetBrand)
+    {
+        foreach (var product in productList)
+        {
+            // ProductType이 일치하고, isFake가 true이며, currentBrand가 목표 브랜드와 일치
+            if (product.productType == productType &&
+                product.isFake &&
+                product.currentBrand == targetBrand)
+            {
+                Debug.Log($"[ProductDataManager] 가짜 제품 발견: {product.productName} (Type: {productType}, Brand: {targetBrand})");
+                return product;
+            }
+        }
+
+        Debug.LogWarning($"[ProductDataManager] 가짜 제품을 찾을 수 없음 (Type: {productType}, Brand: {targetBrand})");
+        return null;
+    }
+
+    /// <summary>
+    /// 모든 브랜드 데이터 가져오기
+    /// </summary>
+    public List<BrandData> GetAllBrands()
+    {
+        return new List<BrandData>(brandList);
+    }
+
+    /// <summary>
+    /// 특정 ProductType에 해당하는 BrandData 가져오기
+    /// </summary>
+    public BrandData GetBrandDataByType(ProductType type)
+    {
+        foreach (var brand in brandList)
+        {
+            if (brand.targetProductType == type)
+            {
+                return brand;
+            }
+        }
+
+        Debug.LogWarning($"[ProductDataManager] BrandData를 찾을 수 없음: {type}");
+        return null;
     }
 
     /// <summary>

@@ -379,7 +379,7 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 }
 
                 // 스캔 실패 - 복사본 삭제
-                Destroy(gameObject);
+                // Destroy(gameObject);
                 return;
             }
 

@@ -1,10 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 
 /// <summary>
 /// POS 시스템 - 구매 내역, 환불, 매출 확인
+/// 가짜 제품 탐지 기능 추가 (Unity 6.0 호환)
 /// </summary>
 public class POSSystem : MonoBehaviour
 {
@@ -142,6 +143,25 @@ public class POSSystem : MonoBehaviour
         int transactionTotal = 0;
         int transactionProfit = 0;
 
+        // 가짜 제품 탐지
+        bool hasFakeProduct = false;
+        foreach (var product in products)
+        {
+            if (IsFakeProduct(product))
+            {
+                hasFakeProduct = true;
+                Debug.LogWarning($"[POS] 가짜 제품 탐지! {product.productData.productName}");
+                break;
+            }
+        }
+
+        // 가짜 제품이 발견되면 실수로 처리
+        if (hasFakeProduct)
+        {
+            AddMistake();
+            Debug.LogWarning($"[POS] 거래 #{currentTransactionID} - 가짜 제품 판매로 실수 카운트!");
+        }
+
         TransactionUIData uiData = new TransactionUIData
         {
             transactionID = currentTransactionID
@@ -153,10 +173,13 @@ public class POSSystem : MonoBehaviour
 
         TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
         if (customFont != null) headerText.font = customFont;
-        headerText.text = $"━ 거래 #{currentTransactionID} ━";
+
+        // 가짜 제품이 있으면 경고 표시
+        string warningMark = hasFakeProduct ? " ⚠️" : "";
+        headerText.text = $"━ 거래 #{currentTransactionID}{warningMark} ━";
         headerText.fontSize = 16;
         headerText.alignment = TextAlignmentOptions.Center;
-        headerText.color = new Color(0.3f, 0.3f, 0.8f);
+        headerText.color = hasFakeProduct ? new Color(0.8f, 0.3f, 0.3f) : new Color(0.3f, 0.3f, 0.8f);
         headerText.fontStyle = FontStyles.Bold;
 
         RectTransform headerRect = headerObj.GetComponent<RectTransform>();
@@ -213,10 +236,12 @@ public class POSSystem : MonoBehaviour
             string profitSign = itemProfit >= 0 ? "+" : "";
             Color profitColor = itemProfit >= 0 ? new Color(0, 0.7f, 0) : Color.red;
 
-            itemText.text = $"{product.productData.productName}: {current}원 <color=#{ColorUtility.ToHtmlStringRGB(profitColor)}>({profitSign}{itemProfit})</color>";
+            // 가짜 제품 표시
+            string fakeMarker = IsFakeProduct(product) ? " [가짜]" : "";
+            itemText.text = $"{product.productData.productName}{fakeMarker}: {current}원 <color=#{ColorUtility.ToHtmlStringRGB(profitColor)}>({profitSign}{itemProfit})</color>";
             itemText.fontSize = 13;
             itemText.alignment = TextAlignmentOptions.Left;
-            itemText.color = Color.white;
+            itemText.color = IsFakeProduct(product) ? new Color(1f, 0.5f, 0.5f) : Color.white;
 
             RectTransform itemTextRect = itemTextObj.GetComponent<RectTransform>();
             itemTextRect.sizeDelta = new Vector2(180, 25);
@@ -284,6 +309,18 @@ public class POSSystem : MonoBehaviour
         UpdateUI();
 
         Debug.Log($"[POS] 거래 #{currentTransactionID} 기록: {transactionTotal}원 (이익: {profitSign2}{transactionProfit}원), 상품 {products.Count}개");
+    }
+
+    /// <summary>
+    /// 가짜 제품 판별 - isFake가 true인 제품은 가짜로 판정
+    /// </summary>
+    bool IsFakeProduct(ProductInteractable product)
+    {
+        if (product == null || product.productData == null)
+            return false;
+
+        // ProductData의 isFake 플래그를 확인
+        return product.productData.isFake;
     }
 
     void UpdateUI()

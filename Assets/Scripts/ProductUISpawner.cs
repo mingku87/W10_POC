@@ -6,12 +6,19 @@ using UnityEngine.UI;
 /// ProductDataManager의 데이터를 기반으로 UI 버튼을 동적 생성
 /// 이미지처럼 스크롤 가능한 제품 목록을 만듦
 /// 가짜 제품(isFake=true)은 UI에 표시하지 않음
+/// BrandChangeCover도 자동으로 생성
 /// Unity 6.0 최신 버전 호환
 /// </summary>
 public class ProductUISpawner : MonoBehaviour
 {
-    [Header("UI 부모 오브젝트")]
+    [Header("제품 UI 부모 오브젝트")]
     [SerializeField] private Transform contentParent; // ScrollView의 Content
+
+    [Header("브랜드 커버 UI 부모 오브젝트")]
+    [SerializeField] private Transform brandCoverParent; // BrandChangeCover들을 생성할 부모 오브젝트
+
+    [Header("프리팹")]
+    [SerializeField] private GameObject brandCoverPrefab; // BrandChangeCover 프리팹
 
     [Header("필터 설정")]
     [SerializeField] private ProductType filterType = ProductType.None; // None이면 전체 표시
@@ -19,13 +26,16 @@ public class ProductUISpawner : MonoBehaviour
 
     [Header("레이아웃 설정")]
     [SerializeField] private float spacing = 10f; // 버튼 간 간격
+    [SerializeField] private Vector2 brandCoverSize = new Vector2(80, 80); // 브랜드 커버 크기
 
     private List<GameObject> spawnedButtons = new List<GameObject>();
+    private List<GameObject> spawnedBrandCovers = new List<GameObject>();
 
     private void Start()
     {
         // 약간의 지연을 주고 생성 (Manager 초기화 대기)
         Invoke(nameof(SpawnAllProducts), 0.1f);
+        Invoke(nameof(SpawnAllBrandCovers), 0.15f);
     }
 
     /// <summary>
@@ -58,6 +68,44 @@ public class ProductUISpawner : MonoBehaviour
         }
 
         Debug.Log($"[ProductUISpawner] {products.Count}개 제품 UI 생성 완료");
+    }
+
+    /// <summary>
+    /// 모든 BrandChangeCover UI 생성
+    /// </summary>
+    public void SpawnAllBrandCovers()
+    {
+        if (ProductDataManager.Instance == null)
+        {
+            Debug.LogError("[ProductUISpawner] ProductDataManager가 없습니다!");
+            return;
+        }
+
+        if (brandCoverParent == null)
+        {
+            Debug.LogWarning("[ProductUISpawner] Brand Cover Parent가 할당되지 않았습니다! BrandChangeCover를 생성하지 않습니다.");
+            return;
+        }
+
+        if (brandCoverPrefab == null)
+        {
+            Debug.LogWarning("[ProductUISpawner] Brand Cover Prefab이 할당되지 않았습니다! BrandChangeCover를 생성하지 않습니다.");
+            return;
+        }
+
+        // 기존 브랜드 커버 제거
+        ClearAllBrandCovers();
+
+        // 브랜드 목록 가져오기
+        List<BrandData> brands = ProductDataManager.Instance.GetAllBrands();
+
+        // UI 생성
+        foreach (var brand in brands)
+        {
+            SpawnBrandCover(brand);
+        }
+
+        Debug.Log($"[ProductUISpawner] {brands.Count}개 BrandChangeCover UI 생성 완료");
     }
 
     /// <summary>
@@ -129,6 +177,49 @@ public class ProductUISpawner : MonoBehaviour
     }
 
     /// <summary>
+    /// 개별 BrandChangeCover UI 생성
+    /// </summary>
+    private void SpawnBrandCover(BrandData brandData)
+    {
+        if (brandData == null || brandData.brandCoverSprite == null)
+        {
+            Debug.LogWarning("[ProductUISpawner] BrandData 또는 Sprite가 없습니다!");
+            return;
+        }
+
+        // 프리팹 인스턴스화
+        GameObject coverObj = Instantiate(brandCoverPrefab, brandCoverParent);
+        coverObj.name = $"BrandCover_{brandData.targetProductType}";
+
+        // 크기 설정
+        RectTransform rectTransform = coverObj.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            rectTransform.sizeDelta = brandCoverSize;
+        }
+
+        // Image 설정
+        Image image = coverObj.GetComponent<Image>();
+        if (image == null)
+        {
+            image = coverObj.AddComponent<Image>();
+        }
+        image.sprite = brandData.brandCoverSprite;
+
+        // BrandChangeCover 컴포넌트 설정
+        BrandChangeCover cover = coverObj.GetComponent<BrandChangeCover>();
+        if (cover == null)
+        {
+            cover = coverObj.AddComponent<BrandChangeCover>();
+        }
+        cover.SetBrandData(brandData);
+
+        spawnedBrandCovers.Add(coverObj);
+
+        Debug.Log($"[ProductUISpawner] BrandCover 생성: {brandData.targetProductType}");
+    }
+
+    /// <summary>
     /// 제품 버튼 클릭 시 - 드래그 가능한 제품 생성
     /// </summary>
     private void OnProductButtonClicked(ProductData productData)
@@ -143,7 +234,7 @@ public class ProductUISpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 모든 버튼 제거
+    /// 모든 제품 버튼 제거
     /// </summary>
     public void ClearAllButtons()
     {
@@ -153,6 +244,19 @@ public class ProductUISpawner : MonoBehaviour
                 Destroy(button);
         }
         spawnedButtons.Clear();
+    }
+
+    /// <summary>
+    /// 모든 브랜드 커버 제거
+    /// </summary>
+    public void ClearAllBrandCovers()
+    {
+        foreach (var cover in spawnedBrandCovers)
+        {
+            if (cover != null)
+                Destroy(cover);
+        }
+        spawnedBrandCovers.Clear();
     }
 
     /// <summary>
@@ -190,5 +294,14 @@ public class ProductUISpawner : MonoBehaviour
     public void ShowAllProducts()
     {
         SetFilter(ProductType.None, false);
+    }
+
+    /// <summary>
+    /// 브랜드 커버 다시 생성
+    /// </summary>
+    [ContextMenu("브랜드 커버 다시 생성")]
+    public void RefreshBrandCovers()
+    {
+        SpawnAllBrandCovers();
     }
 }
