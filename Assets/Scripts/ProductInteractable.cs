@@ -4,15 +4,17 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// 제품에 붙이는 스크립트. 
+/// 제품에 붙이는 스크립트 (개선 버전)
+/// - 동적 생성 지원
 /// - 드래그: 스캐너로 가져가서 스캔
 /// - 우클릭: 바코드 교체 패널 열기
 /// - 브랜드 변경 존에서 가짜 상품 생성 가능
+/// Unity 6.0 최신 버전 호환
 /// </summary>
 public class ProductInteractable : MonoBehaviour, IPointerClickHandler
 {
     [Header("제품 정보")]
-    public ProductData productData = new ProductData("과자", 1000);
+    public ProductData productData; // Manager에서 할당됨
 
     [Header("UI 텍스트")]
     public TextMeshProUGUI nameText;   // 제품 이름 표시
@@ -22,17 +24,29 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
     public Image productImage;         // 제품 이미지
 
     private BarcodeData currentBarcode;
+    private bool isInitialized = false;
 
-    void Start()
+    private void Start()
     {
-        InitializeAsNewProduct();
+        // 동적 생성된 경우 외부에서 InitializeAsNewProduct() 호출
+        // 수동 배치된 경우 여기서 초기화
+        if (!isInitialized && productData != null)
+        {
+            InitializeAsNewProduct();
+        }
     }
 
     /// <summary>
-    /// 새로운 상품으로 초기화 (BrandChangeZone에서 생성 시에도 호출)
+    /// 새로운 상품으로 초기화 (외부에서 호출 가능)
     /// </summary>
     public void InitializeAsNewProduct()
     {
+        if (productData == null)
+        {
+            Debug.LogError($"[ProductInteractable] ProductData가 null입니다! {gameObject.name}");
+            return;
+        }
+
         // 브랜드 등급을 고려한 가격 설정
         int initialPrice = productData.GetAdjustedPrice();
         currentBarcode = new BarcodeData("ORIGINAL", initialPrice);
@@ -45,13 +59,24 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
             ApplyFakeVisualEffect();
         }
 
+        isInitialized = true;
+
         Debug.Log($"[{productData.productName}] 초기화 완료 - 브랜드: {productData.currentBrand.ToKoreanName()}, 가격: {initialPrice}원, 가짜: {productData.isFake}");
+    }
+
+    /// <summary>
+    /// ProductData 설정 (외부에서 동적 할당 시)
+    /// </summary>
+    public void SetProductData(ProductData data)
+    {
+        productData = data;
+        InitializeAsNewProduct();
     }
 
     /// <summary>
     /// 가짜 상품 시각 효과 적용
     /// </summary>
-    void ApplyFakeVisualEffect()
+    private void ApplyFakeVisualEffect()
     {
         if (productImage == null)
         {
@@ -75,17 +100,15 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    void OnRightClick()
+    private void OnRightClick()
     {
         Debug.Log($"[{productData.productName}] 우클릭 - 바코드 교체 패널 열기");
 
         // CCTV 경고 (CCTVController가 있는 경우)
-        if (FindFirstObjectByType<CCTVController>() != null)
+        var cctvController = FindFirstObjectByType<CCTVController>();
+        if (cctvController != null && CCTVController.IsWatching)
         {
-            if (CCTVController.IsWatching)
-            {
-                Debug.LogWarning($"⚠️ 위험! CCTV가 감시 중입니다! 바코드 교체 시 걸릴 수 있습니다!");
-            }
+            Debug.LogWarning($"⚠️ 위험! CCTV가 감시 중입니다! 바코드 교체 시 걸릴 수 있습니다!");
         }
 
         // 상세 패널 열기
@@ -113,7 +136,7 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
 
     public int GetCurrentPrice()
     {
-        return currentBarcode.price;
+        return currentBarcode?.price ?? productData.originalPrice;
     }
 
     public BarcodeData GetCurrentBarcode()
@@ -123,10 +146,11 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
 
     /// <summary>
     /// 브랜드 변경 시 호출 - 가격 업데이트
-    /// (현재는 InitializeAsNewProduct에서 처리하므로 사용 안함)
     /// </summary>
     public void UpdateBrandUI()
     {
+        if (productData == null) return;
+
         // 브랜드 등급에 따른 새로운 가격 계산
         int newPrice = productData.GetAdjustedPrice();
 
@@ -145,12 +169,18 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
         Debug.Log($"[{productData.productName}] 브랜드 UI 업데이트 완료 - 새 가격: {newPrice}원");
     }
 
-    void UpdateUI()
+    private void UpdateUI()
     {
-        if (nameText != null)
-            nameText.text = productData.productName;
+        if (productData == null) return;
 
-        if (priceText != null)
+        // 제품명 업데이트
+        if (nameText != null)
+        {
+            nameText.text = productData.productName;
+        }
+
+        // 가격 업데이트
+        if (priceText != null && currentBarcode != null)
         {
             priceText.text = $"{currentBarcode.price}원";
 
@@ -165,12 +195,43 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
                 priceText.color = Color.white; // 일반 색상
             }
         }
+
+        // 이미지 업데이트 (Sprite가 있는 경우)
+        if (productImage != null && productData.productSprite != null)
+        {
+            productImage.sprite = productData.productSprite;
+        }
     }
 
-    // Inspector에서 값 변경 시 UI 업데이트
-    void OnValidate()
+    /// <summary>
+    /// Inspector에서 값 변경 시 UI 업데이트
+    /// </summary>
+    private void OnValidate()
     {
-        if (Application.isPlaying && currentBarcode != null)
+        if (Application.isPlaying && isInitialized && currentBarcode != null)
+        {
             UpdateUI();
+        }
+    }
+
+    /// <summary>
+    /// 디버그용 - 현재 상태 출력
+    /// </summary>
+    [ContextMenu("상태 출력")]
+    private void PrintStatus()
+    {
+        if (productData == null)
+        {
+            Debug.Log("[ProductInteractable] ProductData가 null입니다!");
+            return;
+        }
+
+        Debug.Log($"=== {gameObject.name} 상태 ===");
+        Debug.Log($"제품명: {productData.productName}");
+        Debug.Log($"원가: {productData.originalPrice}원");
+        Debug.Log($"현재가: {GetCurrentPrice()}원");
+        Debug.Log($"브랜드: {productData.currentBrand.ToKoreanName()}");
+        Debug.Log($"가짜: {productData.isFake}");
+        Debug.Log($"초기화됨: {isInitialized}");
     }
 }
