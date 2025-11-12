@@ -87,9 +87,19 @@ public class CustomerManager : MonoBehaviour
                 return;
             }
 
+            // 프리팹 인스턴스 생성 (프리팹에 Customer 스크립트가 미리 달려있음)
             GameObject customerObj = Instantiate(customerPrefab, canvas.transform);
-            Customer customer = customerObj.AddComponent<Customer>();
-            customer.manager = this; // 매니저 참조 전달
+
+            // 프리팹에서 Customer 컴포넌트 가져오기 (없으면 자동 추가)
+            Customer customer = customerObj.GetComponent<Customer>();
+            if (customer == null)
+            {
+                Debug.LogWarning("[매니저] Customer 프리팹에 Customer 스크립트가 없어서 자동으로 추가합니다.");
+                customer = customerObj.AddComponent<Customer>();
+            }
+
+            // 매니저 참조 전달
+            customer.manager = this;
 
             // 손님 타입 랜덤 결정 (80% 멀쩡한 손님, 20% 취객)
             float randomValue = Random.value;
@@ -109,24 +119,20 @@ public class CustomerManager : MonoBehaviour
                 customerRect.anchoredPosition = new Vector2(spawnPosition.x, spawnPosition.y);
             }
 
-            // UI Image 설정
-            UnityEngine.UI.Image customerImage = customerObj.GetComponent<UnityEngine.UI.Image>();
-            if (customerImage != null)
+            // 타입에 따라 스프라이트 설정
+            if (customer.customerImage != null)
             {
-                customer.customerImage = customerImage;
-
-                // 타입에 따라 스프라이트 설정
                 if (customer.customerType == Customer.CustomerType.Normal)
                 {
-                    customerImage.sprite = normalSprite;
+                    customer.customerImage.sprite = normalSprite;
                 }
                 else if (customer.customerType == Customer.CustomerType.Drunk)
                 {
-                    customerImage.sprite = drunkSprite;
+                    customer.customerImage.sprite = drunkSprite;
                 }
                 else if (customer.customerType == Customer.CustomerType.OnPhone)
                 {
-                    customerImage.sprite = onPhoneSprite;
+                    customer.customerImage.sprite = onPhoneSprite;
                 }
             }
 
@@ -156,6 +162,22 @@ public class CustomerManager : MonoBehaviour
 
             waitingCustomers.Remove(currentCheckoutCustomer);
             currentCheckoutCustomer.Leave();
+            currentCheckoutCustomer = null;
+            isCustomerAtCheckout = false; // 계산대 비움 - 다음 손님 입장 가능
+        }
+    }
+
+    /// <summary>
+    /// 손님이 화나서 나갔을 때 호출 (시간 초과 또는 사기 한계 초과)
+    /// </summary>
+    public void OnCustomerLeftAngry(Customer customer)
+    {
+        Debug.Log("[매니저] 손님이 화나서 나갔습니다!");
+
+        waitingCustomers.Remove(customer);
+
+        if (currentCheckoutCustomer == customer)
+        {
             currentCheckoutCustomer = null;
             isCustomerAtCheckout = false; // 계산대 비움 - 다음 손님 입장 가능
         }

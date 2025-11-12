@@ -32,6 +32,17 @@ public class Customer : MonoBehaviour
     [Header("선택한 상품들")]
     public List<ProductInteractable> selectedProducts = new List<ProductInteractable>();
 
+    [Header("시간 제한")]
+    public Image timeGaugeImage;            // 시간 게이지 이미지
+    public float checkoutTimeLimit = 30f;   // 계산 제한 시간 (일반 손님 기본값)
+    private float remainingTime;            // 남은 시간
+    private bool isTimerActive = false;     // 타이머 활성화 여부
+
+    [Header("사기 한계")]
+    public float fraudToleranceMin = 0.2f;  // 사기 한계 최소 (20%)
+    public float fraudToleranceMax = 0.3f;  // 사기 한계 최대 (30%)
+    private float currentFraudTolerance;    // 현재 손님의 사기 한계
+
     private float shoppingTime = 5f; // 쇼핑 시간
     private RectTransform rectTransform;
     private Vector2 checkoutPosition = new Vector2(100f, -200f); // UI 좌표
@@ -45,6 +56,32 @@ public class Customer : MonoBehaviour
         {
             customerImage = GetComponent<Image>();
         }
+
+        // 시간 게이지 이미지 초기화
+        if (timeGaugeImage != null)
+        {
+            timeGaugeImage.fillAmount = 1f; // 처음엔 가득 참
+            timeGaugeImage.gameObject.SetActive(false); // 계산대 도착 전까지 숨김
+        }
+
+        // 손님 타입에 따라 시간 제한 및 사기 한계 설정
+        if (customerType == CustomerType.Drunk)
+        {
+            checkoutTimeLimit = Random.Range(50f, 70f); // 취객: 50~70초
+            fraudToleranceMin = 0.7f; // 70%
+            fraudToleranceMax = 0.8f; // 80%
+        }
+        else
+        {
+            checkoutTimeLimit = Random.Range(25f, 35f); // 일반 손님: 25~35초
+            fraudToleranceMin = 0.2f; // 20%
+            fraudToleranceMax = 0.3f; // 30%
+        }
+
+        // 현재 손님의 사기 한계를 랜덤하게 설정
+        currentFraudTolerance = Random.Range(fraudToleranceMin, fraudToleranceMax);
+
+        Debug.Log($"[손님] 타입: {customerType}, 시간제한: {checkoutTimeLimit:F1}초, 사기한계: {currentFraudTolerance:P0}");
 
         // 타입에 따라 스프라이트 설정 (CustomerManager에서 이미 설정됨)
         StartCoroutine(ShoppingRoutine());
@@ -66,6 +103,15 @@ public class Customer : MonoBehaviour
         Debug.Log($"[손님] 계산대 도착! 선택한 상품: {selectedProducts.Count}개");
         readyForCheckout = true;
         isWaiting = false;
+
+        // 시간 제한 타이머 시작
+        remainingTime = checkoutTimeLimit;
+        isTimerActive = true;
+        if (timeGaugeImage != null)
+        {
+            timeGaugeImage.gameObject.SetActive(true); // 게이지 표시
+        }
+        StartCoroutine(CheckoutTimerRoutine());
 
         // 멀쩡한 손님은 가끔 휴대폰을 봄
         if (customerType == CustomerType.Normal)
@@ -118,6 +164,87 @@ public class Customer : MonoBehaviour
                 Debug.Log("[손님] 휴대폰 그만 봄 (다시 정상)");
             }
         }
+    }
+
+    IEnumerator CheckoutTimerRoutine()
+    {
+        while (isTimerActive && remainingTime > 0)
+        {
+            remainingTime -= Time.deltaTime;
+
+            // 시간 게이지 업데이트 (1 = 가득참, 0 = 비어있음)
+            if (timeGaugeImage != null)
+            {
+                timeGaugeImage.fillAmount = remainingTime / checkoutTimeLimit;
+            }
+
+            yield return null;
+        }
+
+        // 시간 초과 시
+        if (isTimerActive && remainingTime <= 0)
+        {
+            Debug.Log($"[손님] 시간 초과! 화나서 나갑니다. (제한시간: {checkoutTimeLimit:F1}초)");
+            LeaveAngry();
+        }
+    }
+
+    /// <summary>
+    /// 사기 한계를 초과했는지 체크 (매 스캔마다 호출)
+    /// </summary>
+    public bool CheckFraudLimit(int scannedTotal)
+    {
+        int actualTotal = GetTotalPrice();
+
+        if (actualTotal == 0)
+        {
+            return true; // 상품이 없으면 체크 안함
+        }
+
+        // 과금 비율 계산
+        float overchargeRatio = (float)(scannedTotal - actualTotal) / actualTotal;
+
+        Debug.Log($"[손님] 과금 체크 - 실제: {actualTotal}원, 스캔: {scannedTotal}원, 비율: {overchargeRatio:P1}, 한계: {currentFraudTolerance:P0}");
+
+        // 사기 한계 초과 시
+        if (overchargeRatio > currentFraudTolerance)
+        {
+            Debug.Log($"[손님] 사기 한계 초과! 화나서 나갑니다. (과금 {overchargeRatio:P1} > 한계 {currentFraudTolerance:P0})");
+            LeaveAngry();
+            return false;
+        }
+
+        return true;
+    }
+
+    void LeaveAngry()
+    {
+        // 타이머 중지
+        isTimerActive = false;
+        readyForCheckout = false;
+
+        // 실수 카운트 증가
+        if (POSSystem.Instance != null)
+        {
+            POSSystem.Instance.AddMistake();
+            Debug.Log("[손님] 손님이 화나서 나감 - 실수 카운트 증가!");
+        }
+
+        // 계산대 정리 요청
+        if (CheckoutCounter.Instance != null)
+        {
+            CheckoutCounter.Instance.OnCustomerLeftAngry();
+        }
+
+        // 매니저에게 알림
+        if (manager != null)
+        {
+            manager.OnCustomerLeftAngry(this);
+        }
+
+        // 퇴장
+        Debug.Log("[손님] 화나서 퇴장!");
+        Destroy(gameObject, 0.5f);
     }
 
     void SelectProducts()
@@ -212,6 +339,9 @@ public class Customer : MonoBehaviour
 
     public void Leave()
     {
+        // 타이머 중지
+        isTimerActive = false;
+
         Debug.Log("[손님] 퇴장합니다");
         Destroy(gameObject, 0.5f);
     }
