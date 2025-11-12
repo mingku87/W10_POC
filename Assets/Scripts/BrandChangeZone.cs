@@ -105,15 +105,6 @@ public class BrandChangeZone : MonoBehaviour, IDropHandler
     /// </summary>
     bool CanConvertToFake(ProductData productData)
     {
-        // 통조림만 변경 가능
-        if (productData.productType != ProductType.CannedPork)
-        {
-            Debug.LogWarning($"[브랜드 변경 실패] {productData.productName}은(는) 통조림이 아닙니다!");
-            UpdateStatusText($"❌ 통조림만 변경 가능합니다");
-            FlashBackground(Color.red, 0.5f);
-            return false;
-        }
-
         // 이미 가짜면 변경 불가
         if (productData.isFake)
         {
@@ -199,7 +190,7 @@ public class BrandChangeZone : MonoBehaviour, IDropHandler
         fakeDraggable.productInteractable = fakeProduct;
 
         // 7. 시각 효과
-        UpdateStatusText($"✅ 가짜 브랜드 생성!\n{fakeData.productName}\n하급 → 상급(가짜)");
+        UpdateStatusText($"가짜 브랜드 생성!\n{fakeData.productName}\n하급 → 상급(가짜)");
         FlashBackground(successColor, changeDelay);
 
         Debug.Log($"[브랜드 변경 성공] {fakeData.productName} - 가짜 상품 생성 완료! 새 가격: {fakeData.GetAdjustedPrice()}원");
@@ -213,7 +204,7 @@ public class BrandChangeZone : MonoBehaviour, IDropHandler
     /// </summary>
     ProductData CopyAndConvertToFake(ProductData original)
     {
-        // ✅ 원본 ProductData를 복사 (깊은 복사)
+        // 원본 ProductData를 복사 (깊은 복사)
         ProductData fakeData = new ProductData(
             original.productName,
             original.originalPrice,
@@ -224,7 +215,7 @@ public class BrandChangeZone : MonoBehaviour, IDropHandler
         // Sprite도 복사 (있으면)
         fakeData.productSprite = original.productSprite;
 
-        // ✅ 하급 → 상급(가짜)로 변환
+        // 하급 → 상급(가짜)로 변환
         fakeData.TryConvertToFakeHigh();
         // 결과: currentBrand = High, isFake = true, originalBrand = Low
 
