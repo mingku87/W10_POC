@@ -46,9 +46,22 @@ public class Customer : MonoBehaviour
     public float fraudToleranceMax = 0.3f;  // 사기 한계 최대 (30%)
     private float currentFraudTolerance;    // 현재 손님의 사기 한계
 
+    [Header("이동 위치")]
+    private Vector2 spawnPos;               // 스폰 위치 (입장/퇴장 위치)
+    private Vector2 enterPos;               // 입장 후 쇼핑 위치
+
     private float shoppingTime = 5f; // 쇼핑 시간
     private RectTransform rectTransform;
     private Vector2 checkoutPosition = new Vector2(100f, -200f); // UI 좌표
+
+    /// <summary>
+    /// 매니저에서 위치 정보를 설정할 때 호출
+    /// </summary>
+    public void SetPositions(Vector2 spawn, Vector2 enter)
+    {
+        spawnPos = spawn;
+        enterPos = enter;
+    }
 
     void Start()
     {
@@ -85,6 +98,17 @@ public class Customer : MonoBehaviour
         currentFraudTolerance = Random.Range(fraudToleranceMin, fraudToleranceMax);
 
         Debug.Log($"[손님] 타입: {customerType}, 시간제한: {checkoutTimeLimit:F1}초, 사기한계: {currentFraudTolerance:P0}");
+
+        // 입장 애니메이션 시작
+        StartCoroutine(EnterRoutine());
+    }
+
+    IEnumerator EnterRoutine()
+    {
+        // 스폰 위치에서 입장 위치로 이동
+        Debug.Log("[손님] 입장 중...");
+        yield return StartCoroutine(MoveToPosition(enterPos, 2f));
+        Debug.Log("[손님] 입장 완료!");
 
         // 타입에 따라 스프라이트 설정 (CustomerManager에서 이미 설정됨)
         StartCoroutine(ShoppingRoutine());
@@ -229,6 +253,9 @@ public class Customer : MonoBehaviour
         isTimerActive = false;
         readyForCheckout = false;
 
+        // 화난 스프라이트로 변경
+        ChangeToAngrySprite();
+
         // 실수 카운트 증가
         if (POSSystem.Instance != null)
         {
@@ -248,9 +275,41 @@ public class Customer : MonoBehaviour
             manager.OnCustomerLeftAngry(this);
         }
 
-        // 퇴장
+        // UI 숨기기
+        if (CustomerUI.Instance != null)
+        {
+            CustomerUI.Instance.HideUI();
+        }
+
+        // 퇴장 애니메이션 시작 (화났을 때도 걸어서 나감)
         Debug.Log("[손님] 화나서 퇴장!");
-        Destroy(gameObject, 0.5f);
+        StartCoroutine(ExitRoutine());
+    }
+
+    /// <summary>
+    /// 손님을 화난 스프라이트로 변경
+    /// </summary>
+    void ChangeToAngrySprite()
+    {
+        if (customerImage == null || manager == null) return;
+
+        // 손님 타입에 따라 화난 스프라이트 설정
+        if (customerType == Customer.CustomerType.Drunk)
+        {
+            if (manager.angryDrunkSprite != null)
+            {
+                customerImage.sprite = manager.angryDrunkSprite;
+                Debug.Log("[손님] 화난 취객 스프라이트로 변경!");
+            }
+        }
+        else // Normal 또는 OnPhone
+        {
+            if (manager.angryNormalSprite != null)
+            {
+                customerImage.sprite = manager.angryNormalSprite;
+                Debug.Log("[손님] 화난 일반 손님 스프라이트로 변경!");
+            }
+        }
     }
 
     void SelectProducts()
@@ -361,20 +420,7 @@ public class Customer : MonoBehaviour
     IEnumerator MoveToCheckout()
     {
         Debug.Log("[손님] 계산대로 이동 중...");
-
-        float moveTime = 2f;
-        Vector2 startPos = rectTransform.anchoredPosition;
-        float elapsed = 0f;
-
-        while (elapsed < moveTime)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / moveTime;
-            rectTransform.anchoredPosition = Vector2.Lerp(startPos, checkoutPosition, t);
-            yield return null;
-        }
-
-        rectTransform.anchoredPosition = checkoutPosition;
+        yield return StartCoroutine(MoveToPosition(checkoutPosition, 2f));
 
         // 계산대에 손님 도착 알림
         if (CheckoutCounter.Instance != null)
@@ -382,6 +428,25 @@ public class Customer : MonoBehaviour
             CheckoutCounter.Instance.OnCustomerArrived(this);
             Debug.Log("[손님] 계산대 대기 중 - 진열대에서 상품을 찾아 스캐너로 드래그하세요!");
         }
+    }
+
+    /// <summary>
+    /// 지정된 위치로 부드럽게 이동
+    /// </summary>
+    IEnumerator MoveToPosition(Vector2 targetPos, float moveTime)
+    {
+        Vector2 startPos = rectTransform.anchoredPosition;
+        float elapsed = 0f;
+
+        while (elapsed < moveTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / moveTime;
+            rectTransform.anchoredPosition = Vector2.Lerp(startPos, targetPos, t);
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = targetPos;
     }
 
     public int GetTotalPrice()
@@ -404,6 +469,19 @@ public class Customer : MonoBehaviour
         {
             CustomerUI.Instance.HideUI();
         }
-        Destroy(gameObject, 0.5f);
+
+        // 퇴장 애니메이션 시작
+        StartCoroutine(ExitRoutine());
+    }
+
+    IEnumerator ExitRoutine()
+    {
+        // 스폰 위치로 이동
+        Debug.Log("[손님] 퇴장 중...");
+        yield return StartCoroutine(MoveToPosition(spawnPos, 2f));
+        Debug.Log("[손님] 퇴장 완료!");
+
+        // 오브젝트 삭제
+        Destroy(gameObject);
     }
 }

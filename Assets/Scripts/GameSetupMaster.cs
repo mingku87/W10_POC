@@ -648,9 +648,9 @@ public class GameSetupMaster : MonoBehaviour
         scannerRect.sizeDelta = new Vector2(70, 70); // 더 크게
 
         BarcodeScanner scannerScript = scanner.AddComponent<BarcodeScanner>();
-/*        scannerScript.scanRange = 100f; // 범위 증가
-        scannerScript.scanReadyColor = Color.green;
-        scannerScript.scanNotReadyColor = Color.gray;*/
+        /*        scannerScript.scanRange = 100f; // 범위 증가
+                scannerScript.scanReadyColor = Color.green;
+                scannerScript.scanNotReadyColor = Color.gray;*/
 
         // 스캐너 안내 텍스트
         GameObject scannerLabelObj = new GameObject("ScannerLabel");
@@ -1457,9 +1457,15 @@ public class GameSetupMaster : MonoBehaviour
         CustomerManager manager = managerObj.AddComponent<CustomerManager>();
         manager.customerPrefab = savedPrefab;
         manager.spawnInterval = 15f; // 15초마다 손님 입장
-        manager.spawnPosition = new Vector3(-300f, -200f, 0); // UI 좌표로 변경
+
+        // 위치는 이제 Transform으로 설정해야 하므로 주석 처리
+        // Unity 인스펙터에서 spawnPosition, enterPosition, bellObject를 수동으로 설정해야 합니다
+        // manager.spawnPosition = 손님 스폰 위치 Transform 할당 필요
+        // manager.enterPosition = 손님 입장 위치 Transform 할당 필요
+        // manager.bellObject = 벨 GameObject 할당 필요
 
         Debug.Log("5. Customer System created (UI 기반, 작은 크기)");
+        Debug.LogWarning("[설정 필요] CustomerManager의 spawnPosition, enterPosition, bellObject를 인스펙터에서 설정하세요!");
 #endif
     }
 }
