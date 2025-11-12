@@ -36,8 +36,8 @@ public class CustomerUI : MonoBehaviour
             Debug.LogError("CustomerUI: shoppingListText가 할당되지 않았습니다!");
         }
 
-        // 시작할 때는 UI를 숨김
-        HideUI();
+        // 시작할 때 UI를 숨기지 않음 (항상 표시)
+        // HideUI(); // 주석 처리 - 손님 캔버스가 자동으로 꺼지는 것 방지
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public class CustomerUI : MonoBehaviour
             shoppingListText.text = ""; // 텍스트 초기화
         }
 
-        // UI (이 스크립트가 붙은 게임 오브젝트)를 비활성화
-        gameObject.SetActive(false);
+        // UI 오브젝트 비활성화는 손님 오브젝트까지 비활성화될 수 있으므로 주석 처리
+        // gameObject.SetActive(false);
     }
 }

@@ -52,7 +52,6 @@ public class Customer : MonoBehaviour
 
     private float shoppingTime = 5f; // 쇼핑 시간
     private RectTransform rectTransform;
-    private Vector2 checkoutPosition = new Vector2(100f, -200f); // UI 좌표
 
     /// <summary>
     /// 매니저에서 위치 정보를 설정할 때 호출
@@ -127,12 +126,17 @@ public class Customer : MonoBehaviour
         // ✨ 선택한 상품 목록 콘솔 출력
         PrintShoppingList();
 
-        // 계산대로 이동
-        yield return StartCoroutine(MoveToCheckout());
-
-        Debug.Log($"[손님] 계산대 도착! 선택한 상품: {selectedProducts.Count}개");
+        // 계산대 도착 (이동 없이 바로 처리)
+        Debug.Log($"[손님] 계산대 대기! 선택한 상품: {selectedProducts.Count}개");
         readyForCheckout = true;
         isWaiting = false;
+
+        // 계산대에 손님 도착 알림
+        if (CheckoutCounter.Instance != null)
+        {
+            CheckoutCounter.Instance.OnCustomerArrived(this);
+            Debug.Log("[손님] 계산대 대기 중 - 진열대에서 상품을 찾아 스캐너로 드래그하세요!");
+        }
 
         // 시간 제한 타이머 시작
         remainingTime = checkoutTimeLimit;
@@ -263,6 +267,27 @@ public class Customer : MonoBehaviour
             Debug.Log("[손님] 손님이 화나서 나감 - 실수 카운트 증가!");
         }
 
+        // UI 숨기기
+        if (CustomerUI.Instance != null)
+        {
+            CustomerUI.Instance.HideUI();
+        }
+
+        // 퇴장 애니메이션 시작 (화났을 때도 걸어서 나감)
+        Debug.Log("[손님] 화나서 퇴장!");
+        StartCoroutine(ExitRoutineAngry());
+    }
+
+    /// <summary>
+    /// 화나서 퇴장하는 루틴 (매니저 및 계산대 정리 포함)
+    /// </summary>
+    IEnumerator ExitRoutineAngry()
+    {
+        // 스폰 위치로 이동
+        Debug.Log("[손님] 퇴장 중...");
+        yield return StartCoroutine(MoveToPosition(spawnPos, 2f));
+        Debug.Log("[손님] 퇴장 완료!");
+
         // 계산대 정리 요청
         if (CheckoutCounter.Instance != null)
         {
@@ -275,15 +300,8 @@ public class Customer : MonoBehaviour
             manager.OnCustomerLeftAngry(this);
         }
 
-        // UI 숨기기
-        if (CustomerUI.Instance != null)
-        {
-            CustomerUI.Instance.HideUI();
-        }
-
-        // 퇴장 애니메이션 시작 (화났을 때도 걸어서 나감)
-        Debug.Log("[손님] 화나서 퇴장!");
-        StartCoroutine(ExitRoutine());
+        // 오브젝트 삭제
+        Destroy(gameObject);
     }
 
     /// <summary>
@@ -417,19 +435,6 @@ public class Customer : MonoBehaviour
         }
     }
 
-    IEnumerator MoveToCheckout()
-    {
-        Debug.Log("[손님] 계산대로 이동 중...");
-        yield return StartCoroutine(MoveToPosition(checkoutPosition, 2f));
-
-        // 계산대에 손님 도착 알림
-        if (CheckoutCounter.Instance != null)
-        {
-            CheckoutCounter.Instance.OnCustomerArrived(this);
-            Debug.Log("[손님] 계산대 대기 중 - 진열대에서 상품을 찾아 스캐너로 드래그하세요!");
-        }
-    }
-
     /// <summary>
     /// 지정된 위치로 부드럽게 이동
     /// </summary>
@@ -465,12 +470,8 @@ public class Customer : MonoBehaviour
         isTimerActive = false;
 
         Debug.Log("[손님] 퇴장합니다");
-        if (CustomerUI.Instance != null)
-        {
-            CustomerUI.Instance.HideUI();
-        }
 
-        // 퇴장 애니메이션 시작
+        // 퇴장 애니메이션 시작 (HideUI는 코루틴 안에서 호출)
         StartCoroutine(ExitRoutine());
     }
 
@@ -480,6 +481,12 @@ public class Customer : MonoBehaviour
         Debug.Log("[손님] 퇴장 중...");
         yield return StartCoroutine(MoveToPosition(spawnPos, 2f));
         Debug.Log("[손님] 퇴장 완료!");
+
+        // UI 숨기기는 삭제 직전에 (이동 완료 후)
+        if (CustomerUI.Instance != null)
+        {
+            CustomerUI.Instance.HideUI();
+        }
 
         // 오브젝트 삭제
         Destroy(gameObject);

@@ -90,11 +90,11 @@ public class CheckoutCounter : MonoBehaviour
 
     void Update()
     {
-        // <--- 수정: 'C' 키 입력 로직 제거
-        // if (Input.GetKeyDown(KeyCode.C) && isCustomerWaiting)
-        // {
-        //     HandleCheckoutInput();
-        // }
+        // C키로 계산 처리
+        if (Input.GetKeyDown(KeyCode.C) && isCustomerWaiting)
+        {
+            HandleCheckoutInput();
+        }
     }
 
     // <--- 수정: 버튼에서 호출할 수 있도록 private이 아닌 (default) 메서드로 둠
