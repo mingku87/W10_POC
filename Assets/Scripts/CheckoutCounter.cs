@@ -112,6 +112,16 @@ public class CheckoutCounter : MonoBehaviour
             return;
         }
 
+        // ✅ C키 눌렀을 때 사기 한계 체크
+        if (currentCustomer != null)
+        {
+            if (!currentCustomer.CheckFraudLimit(itemManager.GetTotalAmount()))
+            {
+                // 손님이 화나서 나감 (Customer.LeaveAngry에서 처리)
+                return;
+            }
+        }
+
         // 카드/현금 랜덤 선택 (50%)
         isCardPayment = Random.value < 0.5f;
         currentPaymentState = PaymentState.WaitingPayment;
@@ -343,6 +353,27 @@ public class CheckoutCounter : MonoBehaviour
     public int GetTotalAmount()
     {
         return itemManager.GetTotalAmount();
+    }
+
+    /// <summary>
+    /// 손님이 화나서 나갔을 때 호출 (시간 초과 또는 사기 한계 초과)
+    /// </summary>
+    public void OnCustomerLeftAngry()
+    {
+        Debug.Log("[계산대] 손님이 화나서 나갔습니다! 계산대를 정리합니다.");
+
+        // 계산대 정리
+        ClearCounter();
+
+        // 상태 초기화
+        currentPaymentState = PaymentState.Scanning;
+        isCardPayment = false;
+        customerPaidAmount = 0;
+        isCustomerWaiting = false;
+        currentCustomer = null;
+
+        // 결제 UI 정리
+        displayManager.ClearPaymentUI();
     }
 
     // 구버전 호환용 (사용 안함)
