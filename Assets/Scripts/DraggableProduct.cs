@@ -4,11 +4,14 @@ using UnityEngine.EventSystems;
 
 /// <summary>
 /// 진열대 상품을 드래그하여:
-/// 1. 스캔 존에 Drop → 스캔 처리 + 계산대 금액 추가
+/// 1. 스캔 존 위에 일정 시간 머물면 자동 스캔
 /// 2. 손님 존으로 다시 드래그하여 배치
 /// </summary>
-public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
+    [Header("자동 스캔 설정")]
+    public float autoScanDelay = 0.1f; // 스캔 존 위에 머물러야 하는 시간 (초)
+
     public ProductInteractable productInteractable; // 연결된 상품 정보
     public bool isScanned = false; // 스캔 완료 여부
     public bool isClone = false; // 복사본 여부
@@ -18,6 +21,12 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
     private RectTransform rectTransform;
     private Vector2 lastValidPosition; // 마지막 유효 위치
     private Transform lastParent; // 마지막 부모
+    private CustomerZone startZone = null;
+
+    // 자동 스캔 관련
+    private bool isOverScanner = false; // 현재 스캔 존 위에 있는지
+    private float scanTimer = 0f; // 스캔 존 위에 머문 시간
+    private bool isDragging = false; // 현재 드래그 중인지
 
     void Awake()
     {
@@ -42,6 +51,21 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         lastParent = transform.parent;
     }
 
+    void Update()
+    {
+        // 드래그 중이고, 스캔되지 않은 상태이며, 스캔 존 위에 있을 때만 타이머 증가
+        if (isDragging && !isScanned && isOverScanner)
+        {
+            scanTimer += Time.deltaTime;
+
+            // 일정 시간 이상 머물면 자동 스캔
+            if (scanTimer >= autoScanDelay)
+            {
+                AutoScan();
+            }
+        }
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         // 손님이 없으면 드래그 불가
@@ -59,13 +83,27 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             return;
         }
 
-        // 복사본이면 드래그 시작
+        // --- 여기서부터 복사본 드래그 시작 ---
+        isDragging = true;
+        scanTimer = 0f;
+        isOverScanner = false;
+
         canvasGroup.alpha = 0.7f;
         canvasGroup.blocksRaycasts = false;
 
-        // 현재 위치 저장
+        // 현재 위치와 부모(lastParent) 저장
         lastValidPosition = rectTransform.anchoredPosition;
         lastParent = transform.parent;
+
+        // 드래그 시작 시, 내가 CustomerZone에 있었는지 확인
+        if (lastParent != null)
+        {
+            startZone = lastParent.GetComponent<CustomerZone>();
+        }
+        else
+        {
+            startZone = null;
+        }
 
         // 최상위로 이동 (다른 UI 위에 표시)
         Canvas topCanvas = FindOrCreateDragCanvas();
@@ -96,6 +134,9 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         cloneRect.sizeDelta = rectTransform.sizeDelta;
 
         // 드래그 시작
+        cloneDraggable.isDragging = true;
+        cloneDraggable.scanTimer = 0f;
+        cloneDraggable.isOverScanner = false;
         cloneDraggable.lastValidPosition = cloneRect.anchoredPosition;
         cloneDraggable.lastParent = dragCanvas.transform;
         cloneDraggable.canvasGroup.alpha = 0.7f;
@@ -119,6 +160,87 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         if (isClone && rectTransform != null && canvas != null)
         {
             rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
+
+            // 드래그 중 스캔 존 위에 있는지 체크
+            CheckIfOverScanner(eventData);
+        }
+    }
+
+    /// <summary>
+    /// 현재 드래그 중인 상품이 스캔 존 위에 있는지 체크
+    /// </summary>
+    void CheckIfOverScanner(PointerEventData eventData)
+    {
+        if (isScanned) return; // 이미 스캔된 상품은 체크하지 않음
+
+        var results = new System.Collections.Generic.List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+
+        bool foundScanner = false;
+        foreach (var result in results)
+        {
+            BarcodeScanner scanner = result.gameObject.GetComponent<BarcodeScanner>();
+            if (scanner != null)
+            {
+                foundScanner = true;
+                break;
+            }
+        }
+
+        // 스캔 존에 진입하거나 벗어났을 때 처리
+        if (foundScanner && !isOverScanner)
+        {
+            // 스캔 존 진입
+            isOverScanner = true;
+            scanTimer = 0f;
+            Debug.Log($"[상품] 스캔 존 진입: {productInteractable.productData.productName}");
+
+            // 스캔 존 시각 효과
+            if (BarcodeScanner.Instance != null)
+            {
+                BarcodeScanner.Instance.FlashScanEffect();
+            }
+        }
+        else if (!foundScanner && isOverScanner)
+        {
+            // 스캔 존 이탈
+            isOverScanner = false;
+            scanTimer = 0f;
+            Debug.Log($"[상품] 스캔 존 이탈: {productInteractable.productData.productName}");
+        }
+    }
+
+    /// <summary>
+    /// 자동 스캔 처리 - 스캔만 하고 드래그는 계속 유지
+    /// </summary>
+    void AutoScan()
+    {
+        if (isScanned) return;
+
+        Debug.Log($"[상품] 자동 스캔 시작! {productInteractable.productData.productName}");
+        OnScanned(); // 스캔 처리
+
+        // OnScanned()에 의해 객체가 파괴되었는지 확인
+        if (this == null || gameObject == null)
+        {
+            return;
+        }
+
+        // 스캔 성공 시 - 드래그는 계속 유지, 스캔 존을 마지막 유효 위치로 설정
+        if (isScanned && BarcodeScanner.Instance != null)
+        {
+            // 스캔 존을 마지막 유효 위치로 기억 (드래그 끝날 때 여기로 돌아감)
+            lastParent = BarcodeScanner.Instance.transform;
+            lastValidPosition = Vector2.zero;
+
+            // 스캔 존 효과
+            BarcodeScanner.Instance.FlashScanEffect();
+
+            // 타이머 리셋 (중복 스캔 방지)
+            scanTimer = 0f;
+            isOverScanner = false;
+
+            Debug.Log($"[상품] 스캔 완료! 계속 드래그 가능");
         }
     }
 
@@ -130,6 +252,10 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             return;
         }
 
+        isDragging = false;
+        isOverScanner = false;
+        scanTimer = 0f;
+
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
@@ -137,68 +263,61 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         var results = new System.Collections.Generic.List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
 
-        bool validDrop = false;
+        CustomerZone endZone = null;
+        bool validDropTargetFound = false;
 
+        // 1. 드롭된 위치에서 유효한 타겟(손님 존) 찾기
         foreach (var result in results)
         {
-            // 1. 스캔 존에 Drop (아직 스캔 안됐을 때만)
-            if (!isScanned)
+            // 스캔 후이고, 손님 존을 찾았을 때
+            if (isScanned)
             {
-                BarcodeScanner scanner = result.gameObject.GetComponent<BarcodeScanner>();
-                if (scanner != null)
+                endZone = result.gameObject.GetComponent<CustomerZone>();
+                if (endZone != null)
                 {
-                    Debug.Log($"[상품] 스캔 존에 Drop! {productInteractable.productData.productName}");
-                    OnScanned();
-
-                    // 스캔 존에 배치
-                    transform.SetParent(scanner.transform);
-                    rectTransform.anchoredPosition = Vector2.zero;
-                    validDrop = true;
-                    break;
-                }
-            }
-            // 2. 손님 존에 Drop (스캔 완료 후에만)
-            else
-            {
-                // CustomerZone 컴포넌트로 확인
-                CustomerZone customerZone = result.gameObject.GetComponent<CustomerZone>();
-                if (customerZone != null)
-                {
-                    Debug.Log($"[상품] 손님 존에 배치 시도! {productInteractable.productData.productName}");
-
-                    // CustomerZone의 OnDrop이 배치를 처리함
-                    validDrop = true;
+                    validDropTargetFound = true;
                     break;
                 }
             }
         }
 
-        // 유효하지 않은 Drop → 마지막 위치로 복귀
-        if (!validDrop)
+        // 2. 시작 존에서 제거 처리
+        if (startZone != null && endZone != startZone)
+        {
+            // 시작 존의 리스트에서 이 상품을 제거
+            startZone.RemoveProduct(this);
+        }
+
+        // 3. 유효한 타겟에 드롭한 경우 처리
+        if (validDropTargetFound)
+        {
+            if (endZone != null)
+            {
+                // 손님 존 로직
+                Debug.Log($"[상품] 손님 존에 배치 시도! {productInteractable.productData.productName}");
+                // 실제 배치는 CustomerZone.OnDrop에서 처리할 것입니다.
+                // CustomerZone.PlaceProduct 에서 UpdateLastValidPlacement()가 호출되어야 합니다.
+            }
+        }
+        // 4. 유효하지 않은 곳에 드롭한 경우 (허공)
+        else
         {
             Debug.Log($"[상품] 잘못된 위치에 Drop - 원위치로 복귀");
 
-            if (isScanned)
+            // 스캔 전 상품을 허공에 버리면 파괴
+            if (!isScanned)
             {
-                // 스캔 완료 상태면 스캔 존으로 복귀
-                BarcodeScanner scanner = FindFirstObjectByType<BarcodeScanner>();
-                if (scanner != null)
-                {
-                    transform.SetParent(scanner.transform);
-                    rectTransform.anchoredPosition = lastValidPosition;
-                }
-            }
-            else
-            {
-                // 스캔 전이면 삭제 (원본은 진열대에 유지)
                 Destroy(gameObject);
             }
-        }
-        else
-        {
-            // 유효한 Drop이면 현재 위치를 마지막 위치로 저장
-            lastValidPosition = rectTransform.anchoredPosition;
-            lastParent = transform.parent;
+            // 스캔 후 상품을 허공에 버리면 마지막 유효 위치로 복귀
+            else
+            {
+                // 스캔 존에 배치
+                transform.SetParent(lastParent);
+                rectTransform.anchoredPosition = lastValidPosition;
+
+                Debug.Log($"[상품] 스캔 존으로 복귀");
+            }
         }
     }
 
@@ -313,5 +432,16 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         dragCanvasObj.AddComponent<GraphicRaycaster>();
 
         return dragCanvas;
+    }
+
+    /// <summary>
+    /// 아이템이 스캐너나 손님 존에 성공적으로 배치되었을 때 호출됩니다.
+    /// (CustomerZone.PlaceProduct 또는 DraggableProduct.OnEndDrag 에서 호출)
+    /// </summary>
+    public void UpdateLastValidPlacement(Transform newParent, CustomerZone newZone)
+    {
+        lastParent = newParent;
+        lastValidPosition = rectTransform.anchoredPosition;
+        startZone = newZone; // 손님 존이 아니면 null이 됨
     }
 }

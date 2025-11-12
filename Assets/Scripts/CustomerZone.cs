@@ -129,10 +129,15 @@ public class CustomerZone : MonoBehaviour, IDropHandler
         }
 
         // 리스트에 추가
-        placedProducts.Add(product);
+        if (!placedProducts.Contains(product)) // [수정] 중복 추가 방지
+        {
+            placedProducts.Add(product);
+        }
 
         // UI 업데이트
         UpdateItemCountUI();
+
+        product.UpdateLastValidPlacement(transform, this);
 
         Debug.Log($"[손님 존] {product.productInteractable.productData.productName} 배치 완료! (총 {placedProducts.Count}개)");
 
@@ -179,6 +184,21 @@ public class CustomerZone : MonoBehaviour, IDropHandler
 
         Debug.Log("[손님 존] 모든 상품 삭제 완료!");
     }
+
+    /// <summary>
+    /// 손님 존에서 특정 상품을 제거합니다. (DraggableProduct가 호출)
+    /// </summary>
+    public void RemoveProduct(DraggableProduct product)
+    {
+        if (product != null && placedProducts.Contains(product))
+        {
+            placedProducts.Remove(product);
+            UpdateItemCountUI();
+            Debug.Log($"[손님 존] {product.productInteractable.productData.productName} 제거됨. (총 {placedProducts.Count}개)");
+        }
+    }
+
+
 
     /// <summary>
     /// 배치된 상품 개수 UI 업데이트

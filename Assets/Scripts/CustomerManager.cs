@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -57,7 +57,7 @@ public class CustomerManager : MonoBehaviour
     IEnumerator CustomerSpawnRoutine()
     {
         // 첫 손님 등장 전 대기 시간 증가
-        yield return new WaitForSeconds(10f); // 10초 대기
+        //yield return new WaitForSeconds(10f); // 10초 대기
         SpawnCustomer();
 
         while (true)

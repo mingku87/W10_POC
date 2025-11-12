@@ -15,14 +15,14 @@ public class CheckoutCounter : MonoBehaviour
     public float itemSpacing = 1.5f;
 
     [Header("UI")]
-    public TextMeshProUGUI totalAmountText;
-    public GameObject checkoutButton;
+    public Button processPaymentButton; // <--- 추가: 인스펙터에서 할당할 실제 UI 버튼
 
     [Header("손님 존 참조")]
     public CustomerZone customerZone; // CustomerZone 컴포넌트 참조
 
     // 서브 매니저들
     private CheckoutDisplayManager displayManager;
+    public TextMeshProUGUI totalAmountText;
     private CheckoutItemManager itemManager;
 
     // 상태
@@ -75,18 +75,35 @@ public class CheckoutCounter : MonoBehaviour
                 Debug.LogWarning("[계산대] CustomerZone을 찾을 수 없습니다! Inspector에서 설정하세요.");
             }
         }
+
+        // <--- 추가: 버튼 리스너 등록 및 초기 비활성화
+        if (processPaymentButton != null)
+        {
+            processPaymentButton.onClick.AddListener(HandleCheckoutInput);
+            processPaymentButton.interactable = false; // 처음에는 비활성화
+        }
+        else
+        {
+            Debug.LogWarning("[계산대] processPaymentButton이 Inspector에서 할당되지 않았습니다!");
+        }
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.C) && isCustomerWaiting)
-        {
-            HandleCheckoutInput();
-        }
+        // <--- 수정: 'C' 키 입력 로직 제거
+        // if (Input.GetKeyDown(KeyCode.C) && isCustomerWaiting)
+        // {
+        //     HandleCheckoutInput();
+        // }
     }
 
+    // <--- 수정: 버튼에서 호출할 수 있도록 private이 아닌 (default) 메서드로 둠
+    // (public으로 변경해도 무방합니다)
     void HandleCheckoutInput()
     {
+        // <--- 추가: 버튼이 활성화되었더라도, 안전을 위해 한 번 더 체크
+        if (!isCustomerWaiting) return;
+
         if (currentPaymentState == PaymentState.Scanning)
         {
             StartPayment();
@@ -263,6 +280,12 @@ public class CheckoutCounter : MonoBehaviour
 
         isCustomerWaiting = false;
         currentCustomer = null;
+
+        // <--- 추가: 버튼 비활성화
+        if (processPaymentButton != null)
+        {
+            processPaymentButton.interactable = false;
+        }
     }
 
     /// <summary>
@@ -307,12 +330,18 @@ public class CheckoutCounter : MonoBehaviour
         currentCustomer = customer;
         isCustomerWaiting = true;
 
+        // <--- 추가: 버튼 활성화
+        if (processPaymentButton != null)
+        {
+            processPaymentButton.interactable = true;
+        }
+
         Debug.Log("[계산대] 손님 대기 중!");
         Debug.Log("═══════════════════════════════════");
         Debug.Log("📋 게임 플레이:");
-        Debug.Log("  1. 진열대 상품을 스캔 존으로 드래그");
-        Debug.Log("  2. 스캔된 상품을 손님 존으로 드래그");
-        Debug.Log("  3. 모든 상품 스캔 완료 후 C키로 결제");
+        Debug.Log("  1. 진열대 상품을 스캔 존으로 드래그");
+        Debug.Log("  2. 스캔된 상품을 손님 존으로 드래그");
+        Debug.Log("  3. 모든 상품 스캔 완료 후 C키로 결제"); // <--- (이 로그는 나중에 버튼 이름으로 바꾸셔도 됩니다)
         Debug.Log("═══════════════════════════════════");
 
         // 스캔 존 초기화
@@ -374,6 +403,12 @@ public class CheckoutCounter : MonoBehaviour
 
         // 결제 UI 정리
         displayManager.ClearPaymentUI();
+
+        // <--- 추가: 버튼 비활성화
+        if (processPaymentButton != null)
+        {
+            processPaymentButton.interactable = false;
+        }
     }
 
     // 구버전 호환용 (사용 안함)
