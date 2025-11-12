@@ -13,11 +13,19 @@ public class CustomerManager : MonoBehaviour
     [Tooltip("손님 등장 간격 (초)")]
     public float spawnInterval = 15f;
 
-    [Tooltip("손님 입장 위치 (World)")]
-    public Vector3 spawnPosition = new Vector3(-5f, 0, 0);
-
     [Header("References")]
     public GameObject customerPrefab;
+
+    [Header("손님 위치 설정")]
+    [Tooltip("손님이 처음 생성되는 위치 (나갈 때도 여기로)")]
+    public Transform spawnPosition;
+
+    [Tooltip("손님이 걸어 들어올 위치 (쇼핑 위치)")]
+    public Transform enterPosition;
+
+    [Header("벨 설정")]
+    [Tooltip("손님 입장 전에 보여줄 벨 오브젝트")]
+    public GameObject bellObject;
 
     [Header("Customer Sprites")]
     [Tooltip("멀쩡한 손님 스프라이트")]
@@ -26,6 +34,10 @@ public class CustomerManager : MonoBehaviour
     public Sprite drunkSprite;
     [Tooltip("핸드폰 보는 손님 스프라이트")]
     public Sprite onPhoneSprite;
+    [Tooltip("화난 일반 손님 스프라이트")]
+    public Sprite angryNormalSprite;
+    [Tooltip("화난 취객 스프라이트")]
+    public Sprite angryDrunkSprite;
 
     [Header("계산대 설정")]
     public Transform checkoutCounter; // 계산대 위치
@@ -51,14 +63,20 @@ public class CustomerManager : MonoBehaviour
         // 스프라이트 자동 로드 (Resources 폴더에서)
         LoadSpritesFromResources();
 
+        // 벨 오브젝트 초기화 (처음엔 꺼둠)
+        if (bellObject != null)
+        {
+            bellObject.SetActive(false);
+        }
+
         StartCoroutine(CustomerSpawnRoutine());
     }
 
     IEnumerator CustomerSpawnRoutine()
     {
         // 첫 손님 등장 전 대기 시간 증가
-        //yield return new WaitForSeconds(10f); // 10초 대기
-        SpawnCustomer();
+        yield return new WaitForSeconds(10f); // 10초 대기
+        StartCoroutine(SpawnCustomerWithBell());
 
         while (true)
         {
@@ -67,7 +85,7 @@ public class CustomerManager : MonoBehaviour
             // 계산대에 손님이 있으면 새 손님 입장 안 함
             if (!isCustomerAtCheckout)
             {
-                SpawnCustomer();
+                StartCoroutine(SpawnCustomerWithBell());
             }
             else
             {
@@ -76,19 +94,43 @@ public class CustomerManager : MonoBehaviour
         }
     }
 
+    IEnumerator SpawnCustomerWithBell()
+    {
+        // 1. 벨 울리기 (1초간 표시)
+        if (bellObject != null)
+        {
+            bellObject.SetActive(true);
+            Debug.Log("[매니저] 띵동~ 손님이 곧 입장합니다!");
+            yield return new WaitForSeconds(1f);
+            bellObject.SetActive(false);
+        }
+
+        // 2. 1초 후 손님 생성 및 입장
+        yield return new WaitForSeconds(1f);
+        SpawnCustomer();
+    }
+
     void SpawnCustomer()
     {
         if (customerPrefab != null)
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
-            if (canvas == null)
+            // 스폰 위치와 입장 위치 확인
+            if (spawnPosition == null || enterPosition == null)
             {
-                Debug.LogError("Canvas를 찾을 수 없습니다!");
+                Debug.LogError("[매니저] 스폰 위치 또는 입장 위치가 설정되지 않았습니다!");
                 return;
             }
 
-            // 프리팹 인스턴스 생성 (프리팹에 Customer 스크립트가 미리 달려있음)
-            GameObject customerObj = Instantiate(customerPrefab, canvas.transform);
+            // 스폰 위치의 부모(Canvas 등) 가져오기
+            Transform parentTransform = spawnPosition.parent;
+            if (parentTransform == null)
+            {
+                Debug.LogError("[매니저] 스폰 위치에 부모가 없습니다!");
+                return;
+            }
+
+            // 프리팹 인스턴스 생성 (스폰 위치의 부모 하위에 생성)
+            GameObject customerObj = Instantiate(customerPrefab, parentTransform);
 
             // 프리팹에서 Customer 컴포넌트 가져오기 (없으면 자동 추가)
             Customer customer = customerObj.GetComponent<Customer>();
@@ -112,11 +154,18 @@ public class CustomerManager : MonoBehaviour
                 customer.customerType = Customer.CustomerType.Normal;
             }
 
-            // RectTransform 설정 (UI 위치)
+            // RectTransform 설정 (스폰 위치에 생성)
             RectTransform customerRect = customerObj.GetComponent<RectTransform>();
-            if (customerRect != null)
+            RectTransform spawnRect = spawnPosition.GetComponent<RectTransform>();
+            RectTransform enterRect = enterPosition.GetComponent<RectTransform>();
+
+            if (customerRect != null && spawnRect != null && enterRect != null)
             {
-                customerRect.anchoredPosition = new Vector2(spawnPosition.x, spawnPosition.y);
+                // 스폰 위치로 초기 배치
+                customerRect.anchoredPosition = spawnRect.anchoredPosition;
+
+                // 입장 위치 정보 전달
+                customer.SetPositions(spawnRect.anchoredPosition, enterRect.anchoredPosition);
             }
 
             // 타입에 따라 스프라이트 설정
@@ -205,6 +254,18 @@ public class CustomerManager : MonoBehaviour
         {
             onPhoneSprite = Resources.Load<Sprite>("Sprites/Customers/onphone");
             if (onPhoneSprite != null) Debug.Log("OnPhone sprite loaded from Resources");
+        }
+
+        if (angryNormalSprite == null)
+        {
+            angryNormalSprite = Resources.Load<Sprite>("Sprites/Customers/angry_normal");
+            if (angryNormalSprite != null) Debug.Log("Angry Normal sprite loaded from Resources");
+        }
+
+        if (angryDrunkSprite == null)
+        {
+            angryDrunkSprite = Resources.Load<Sprite>("Sprites/Customers/angry_drunk");
+            if (angryDrunkSprite != null) Debug.Log("Angry Drunk sprite loaded from Resources");
         }
     }
 }
