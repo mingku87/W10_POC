@@ -5,6 +5,7 @@ using UnityEngine.UI;
 /// <summary>
 /// ProductDataManager의 데이터를 기반으로 UI 버튼을 동적 생성
 /// 이미지처럼 스크롤 가능한 제품 목록을 만듦
+/// 가짜 제품(isFake=true)은 UI에 표시하지 않음
 /// Unity 6.0 최신 버전 호환
 /// </summary>
 public class ProductUISpawner : MonoBehaviour
@@ -75,11 +76,13 @@ public class ProductUISpawner : MonoBehaviour
         else if (filterType != ProductType.None)
         {
             products = ProductDataManager.Instance.GetProductsByType(filterType);
+            // 가짜 제품 제외
+            products.RemoveAll(p => p.isFake);
         }
-        // 전체
+        // 전체 (가짜 제외)
         else
         {
-            products = ProductDataManager.Instance.GetAllProducts();
+            products = ProductDataManager.Instance.GetRealProducts();
         }
 
         return products;
@@ -181,7 +184,7 @@ public class ProductUISpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 전체 제품 표시
+    /// 전체 제품 표시 (가짜 제외)
     /// </summary>
     [ContextMenu("전체 제품 표시")]
     public void ShowAllProducts()

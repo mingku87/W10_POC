@@ -222,7 +222,7 @@ MonoBehaviour:
     originalBrand: 1
   nameText: {fileID: 4661939955775949615}
   priceText: {fileID: 7709364746163252074}
-  productImage: {fileID: 0}
+  productImage: {fileID: 7208164700369396363}
 --- !u!114 &4380532789330168049
 MonoBehaviour:
   m_ObjectHideFlags: 0

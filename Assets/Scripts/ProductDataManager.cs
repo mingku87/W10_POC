@@ -162,6 +162,22 @@ public class ProductDataManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 실제 제품만 가져오기 (가짜 제외)
+    /// </summary>
+    public List<ProductData> GetRealProducts()
+    {
+        List<ProductData> realProducts = new List<ProductData>();
+        foreach (var product in productList)
+        {
+            if (!product.isFake)
+            {
+                realProducts.Add(product);
+            }
+        }
+        return realProducts;
+    }
+
+    /// <summary>
     /// UI 프리팹 가져오기
     /// </summary>
     public GameObject GetProductButtonPrefab()

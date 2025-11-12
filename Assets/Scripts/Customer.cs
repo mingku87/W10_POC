@@ -9,6 +9,7 @@ using System.Linq;
 /// 1. 멀쩡한 손님 (80%)
 /// 2. 휴대폰 보는 손님 (멀쩡한 손님이 계산대에서 변함)
 /// 3. 취한 손님 (20%)
+/// 가짜 제품(isFake=true)은 주문하지 않음
 /// </summary>
 public class Customer : MonoBehaviour
 {
@@ -330,12 +331,22 @@ public class Customer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 상품 선택 로직 - 가짜 제품(isFake=true)은 선택하지 않음
+    /// </summary>
     void SelectProducts()
     {
         ProductInteractable[] allProducts = FindObjectsByType<ProductInteractable>(FindObjectsSortMode.None);
 
         foreach (ProductInteractable product in allProducts)
         {
+            // 가짜 제품은 무조건 제외
+            if (product.productData.isFake)
+            {
+                Debug.Log($"[손님] {product.productData.productName}은 가짜 제품이므로 선택하지 않음");
+                continue;
+            }
+
             int originalPrice = product.productData.originalPrice;
             int currentPrice = product.GetCurrentPrice();
 
