@@ -107,25 +107,24 @@ public class CustomerZone : MonoBehaviour, IDropHandler
     /// </summary>
     void PlaceProduct(DraggableProduct product, PointerEventData eventData)
     {
+        RectTransform productRect = product.GetComponent<RectTransform>();
+
+        // 현재 월드 위치 저장 (드롭한 위치)
+        Vector3 worldPosition = productRect.position;
+
         // 부모 설정
         product.transform.SetParent(transform);
 
         if (useFreePositioning)
         {
-            // 자유 배치 - Drop한 위치 그대로
-            Vector2 localPoint;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                GetComponent<RectTransform>(),
-                eventData.position,
-                eventData.pressEventCamera,
-                out localPoint
-            );
-            product.GetComponent<RectTransform>().anchoredPosition = localPoint;
+            // 자유 배치 - 드롭한 위치 그대로 유지
+            // 부모가 바뀌었으므로 월드 위치를 로컬 위치로 변환
+            productRect.position = worldPosition;
         }
         else
         {
             // Grid 정렬 - GridLayoutGroup이 자동 배치
-            product.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+            productRect.anchoredPosition = Vector2.zero;
         }
 
         // 리스트에 추가
