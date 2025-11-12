@@ -264,11 +264,25 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         EventSystem.current.RaycastAll(eventData, results);
 
         CustomerZone endZone = null;
+        BrandChangeZone brandChangeZone = null; // ✅ 추가
         bool validDropTargetFound = false;
 
-        // 1. 드롭된 위치에서 유효한 타겟(손님 존) 찾기
+        // 1. 드롭된 위치에서 유효한 타겟 찾기
         foreach (var result in results)
         {
+            // ✅ BrandChangeZone 체크 추가
+            if (!isScanned) // 스캔 전 상품만 BrandChangeZone 사용 가능
+            {
+                brandChangeZone = result.gameObject.GetComponent<BrandChangeZone>();
+                if (brandChangeZone != null)
+                {
+                    validDropTargetFound = true;
+                    Debug.Log($"[상품] BrandChangeZone에 드롭됨! {productInteractable.productData.productName}");
+                    // BrandChangeZone의 OnDrop이 처리하므로 여기서는 return
+                    return;
+                }
+            }
+
             // 스캔 후이고, 손님 존을 찾았을 때
             if (isScanned)
             {
@@ -284,7 +298,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         // 2. 시작 존에서 제거 처리
         if (startZone != null && endZone != startZone)
         {
-            // 시작 존의 리스트에서 이 상품을 제거
             startZone.RemoveProduct(this);
         }
 
@@ -293,10 +306,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         {
             if (endZone != null)
             {
-                // 손님 존 로직
                 Debug.Log($"[상품] 손님 존에 배치 시도! {productInteractable.productData.productName}");
-                // 실제 배치는 CustomerZone.OnDrop에서 처리할 것입니다.
-                // CustomerZone.PlaceProduct 에서 UpdateLastValidPlacement()가 호출되어야 합니다.
+                // 실제 배치는 CustomerZone.OnDrop에서 처리
             }
         }
         // 4. 유효하지 않은 곳에 드롭한 경우 (허공)
@@ -312,14 +323,19 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             // 스캔 후 상품을 허공에 버리면 마지막 유효 위치로 복귀
             else
             {
-                // 스캔 존에 배치
                 transform.SetParent(lastParent);
                 rectTransform.anchoredPosition = lastValidPosition;
-
                 Debug.Log($"[상품] 스캔 존으로 복귀");
             }
         }
     }
+
+
+
+
+
+
+
 
     /// <summary>
     /// 스캔 처리 - 계산대에 금액 추가

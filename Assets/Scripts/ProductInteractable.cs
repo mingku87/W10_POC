@@ -7,6 +7,7 @@ using TMPro;
 /// 제품에 붙이는 스크립트. 
 /// - 드래그: 스캐너로 가져가서 스캔
 /// - 우클릭: 바코드 교체 패널 열기
+/// - 브랜드 변경 존에서 가짜 상품 생성 가능
 /// </summary>
 public class ProductInteractable : MonoBehaviour, IPointerClickHandler
 {
@@ -17,15 +18,51 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
     public TextMeshProUGUI nameText;   // 제품 이름 표시
     public TextMeshProUGUI priceText;  // 현재 가격 표시
 
+    [Header("시각 효과")]
+    public Image productImage;         // 제품 이미지
+
     private BarcodeData currentBarcode;
 
     void Start()
     {
-        // 기본 바코드 설정 (원래 가격)
-        currentBarcode = new BarcodeData("ORIGINAL", productData.originalPrice);
+        InitializeAsNewProduct();
+    }
+
+    /// <summary>
+    /// 새로운 상품으로 초기화 (BrandChangeZone에서 생성 시에도 호출)
+    /// </summary>
+    public void InitializeAsNewProduct()
+    {
+        // 브랜드 등급을 고려한 가격 설정
+        int initialPrice = productData.GetAdjustedPrice();
+        currentBarcode = new BarcodeData("ORIGINAL", initialPrice);
+
         UpdateUI();
 
-        Debug.Log($"[{productData.productName}] 초기화 완료 - 드래그: 스캔, 우클릭: 바코드 교체");
+        // 가짜 상품이면 시각 효과 추가
+        if (productData.isFake)
+        {
+            ApplyFakeVisualEffect();
+        }
+
+        Debug.Log($"[{productData.productName}] 초기화 완료 - 브랜드: {productData.currentBrand.ToKoreanName()}, 가격: {initialPrice}원, 가짜: {productData.isFake}");
+    }
+
+    /// <summary>
+    /// 가짜 상품 시각 효과 적용
+    /// </summary>
+    void ApplyFakeVisualEffect()
+    {
+        if (productImage == null)
+        {
+            productImage = GetComponent<Image>();
+        }
+
+        if (productImage != null)
+        {
+            // 금색 테두리 효과
+            productImage.color = new Color(1f, 0.9f, 0.6f);
+        }
     }
 
     // IPointerClickHandler 구현 - 우클릭 감지
@@ -42,10 +79,13 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
     {
         Debug.Log($"[{productData.productName}] 우클릭 - 바코드 교체 패널 열기");
 
-        // CCTV 경고
-        if (CCTVController.IsWatching)
+        // CCTV 경고 (CCTVController가 있는 경우)
+        if (FindFirstObjectByType<CCTVController>() != null)
         {
-            Debug.LogWarning($"⚠️ 위험! CCTV가 감시 중입니다! 바코드 교체 시 걸릴 수 있습니다!");
+            if (CCTVController.IsWatching)
+            {
+                Debug.LogWarning($"⚠️ 위험! CCTV가 감시 중입니다! 바코드 교체 시 걸릴 수 있습니다!");
+            }
         }
 
         // 상세 패널 열기
@@ -81,13 +121,50 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
         return currentBarcode;
     }
 
+    /// <summary>
+    /// 브랜드 변경 시 호출 - 가격 업데이트
+    /// (현재는 InitializeAsNewProduct에서 처리하므로 사용 안함)
+    /// </summary>
+    public void UpdateBrandUI()
+    {
+        // 브랜드 등급에 따른 새로운 가격 계산
+        int newPrice = productData.GetAdjustedPrice();
+
+        // 바코드 가격 업데이트
+        currentBarcode = new BarcodeData("ORIGINAL", newPrice);
+
+        // UI 업데이트
+        UpdateUI();
+
+        // 시각적 피드백 (가짜 상품은 색상 변경)
+        if (productData.isFake)
+        {
+            ApplyFakeVisualEffect();
+        }
+
+        Debug.Log($"[{productData.productName}] 브랜드 UI 업데이트 완료 - 새 가격: {newPrice}원");
+    }
+
     void UpdateUI()
     {
         if (nameText != null)
             nameText.text = productData.productName;
 
         if (priceText != null)
+        {
             priceText.text = $"{currentBarcode.price}원";
+
+            // 가짜 상품이면 가격에 특수 표시
+            if (productData.isFake)
+            {
+                priceText.text += " ★"; // 별 표시로 힌트
+                priceText.color = productData.currentBrand.ToColor(); // 금색
+            }
+            else
+            {
+                priceText.color = Color.white; // 일반 색상
+            }
+        }
     }
 
     // Inspector에서 값 변경 시 UI 업데이트
