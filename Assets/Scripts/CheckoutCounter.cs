@@ -18,6 +18,9 @@ public class CheckoutCounter : MonoBehaviour
     public TextMeshProUGUI totalAmountText;
     public GameObject checkoutButton;
 
+    [Header("손님 존 참조")]
+    public CustomerZone customerZone; // CustomerZone 컴포넌트 참조
+
     // 서브 매니저들
     private CheckoutDisplayManager displayManager;
     private CheckoutItemManager itemManager;
@@ -62,6 +65,16 @@ public class CheckoutCounter : MonoBehaviour
     {
         displayManager.Initialize(counterPosition);
         UpdateTotalDisplay();
+
+        // CustomerZone 자동 찾기
+        if (customerZone == null)
+        {
+            customerZone = CustomerZone.Instance;
+            if (customerZone == null)
+            {
+                Debug.LogWarning("[계산대] CustomerZone을 찾을 수 없습니다! Inspector에서 설정하세요.");
+            }
+        }
     }
 
     void Update()
@@ -226,6 +239,9 @@ public class CheckoutCounter : MonoBehaviour
         isCardPayment = false;
         customerPaidAmount = 0;
 
+        // ✨ 손님 존의 모든 상품 복사본 삭제
+        ClearCustomerZone();
+
         // 계산대 정리
         ClearCounter();
 
@@ -239,11 +255,32 @@ public class CheckoutCounter : MonoBehaviour
         currentCustomer = null;
     }
 
+    /// <summary>
+    /// 손님 존의 모든 상품 복사본 삭제
+    /// </summary>
+    void ClearCustomerZone()
+    {
+        if (customerZone == null)
+        {
+            Debug.LogWarning("[계산대] CustomerZone이 설정되지 않았습니다!");
+            return;
+        }
+
+        // CustomerZone에게 삭제 요청
+        customerZone.ClearAllProducts();
+    }
+
     void ClearCounter()
     {
         displayManager.ClearAllDisplayedItems();
         itemManager.ClearAllItems();
         UpdateTotalDisplay();
+
+        // 스캔 존 초기화
+        if (BarcodeScanner.Instance != null)
+        {
+            BarcodeScanner.Instance.ResetScannedProducts();
+        }
 
         Debug.Log("[계산대] 계산대 정리 완료");
     }
@@ -260,17 +297,15 @@ public class CheckoutCounter : MonoBehaviour
         currentCustomer = customer;
         isCustomerWaiting = true;
 
-        Debug.Log("[계산대] 손님 대기 중 - 손님이 가져온 상품을 계산대에 표시합니다!");
+        Debug.Log("[계산대] 손님 대기 중!");
+        Debug.Log("═══════════════════════════════════");
+        Debug.Log("📋 게임 플레이:");
+        Debug.Log("  1. 진열대 상품을 스캔 존으로 드래그");
+        Debug.Log("  2. 스캔된 상품을 손님 존으로 드래그");
+        Debug.Log("  3. 모든 상품 스캔 완료 후 C키로 결제");
+        Debug.Log("═══════════════════════════════════");
 
-        // 손님이 선택한 상품들을 계산대에 표시
-        foreach (var product in customer.selectedProducts)
-        {
-            displayManager.DisplayScannedItem(product);
-        }
-
-        Debug.Log($"[계산대] 손님이 가져온 상품 {customer.selectedProducts.Count}개 표시 완료! 스캐너로 스캔하세요!");
-
-        // 스캐너 초기화
+        // 스캔 존 초기화
         if (BarcodeScanner.Instance != null)
         {
             BarcodeScanner.Instance.ResetScannedProducts();
@@ -313,6 +348,6 @@ public class CheckoutCounter : MonoBehaviour
     // 구버전 호환용 (사용 안함)
     public void DisplayCustomerItems(List<ProductInteractable> products)
     {
-        Debug.Log("[계산대] 손님이 도착했습니다. 스캐너로 상품을 스캔하세요!");
+        Debug.Log("[계산대] 손님이 도착했습니다.");
     }
 }

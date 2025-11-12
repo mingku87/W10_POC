@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
@@ -648,9 +648,9 @@ public class GameSetupMaster : MonoBehaviour
         scannerRect.sizeDelta = new Vector2(70, 70); // 더 크게
 
         BarcodeScanner scannerScript = scanner.AddComponent<BarcodeScanner>();
-        scannerScript.scanRange = 100f; // 범위 증가
+/*        scannerScript.scanRange = 100f; // 범위 증가
         scannerScript.scanReadyColor = Color.green;
-        scannerScript.scanNotReadyColor = Color.gray;
+        scannerScript.scanNotReadyColor = Color.gray;*/
 
         // 스캐너 안내 텍스트
         GameObject scannerLabelObj = new GameObject("ScannerLabel");
