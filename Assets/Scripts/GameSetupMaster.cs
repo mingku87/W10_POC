@@ -861,8 +861,10 @@ public class GameSetupMaster : MonoBehaviour
         realGrid.constraintCount = 2; // 2열 고정 (3행으로 배치됨)
         realGrid.padding = new RectOffset(10, 10, 10, 10);
 
-        // 진짜 돈 미리 생성 (처음 한 번만)
-        CreateMoneyInDrawer(realMoneyArea.transform, moneyPrefabCache, false);
+        // 돈 UI는 인스펙터에서 할당하므로 코드에서 생성하지 않음
+
+        // 진짜 돈 서랍 처음에는 닫힌 상태
+        drawerPanel.SetActive(false);
 
         // 닫기 버튼 제거 - 현금통 버튼으로 토글
 
@@ -1015,7 +1017,6 @@ public class GameSetupMaster : MonoBehaviour
 
         // 버튼 이벤트 연결
         drawerButton.onClick.RemoveAllListeners(); // 기존 리스너 제거
-        drawerButton.onClick.RemoveAllListeners(); // 기존 리스너 제거
         drawerButton.onClick.AddListener(() =>
         {
             // 단순 토글 (보이기/숨기기만)
@@ -1033,8 +1034,8 @@ public class GameSetupMaster : MonoBehaviour
             }
         });
 
-        // 가짜 돈 미리 생성 (항상 표시)
-        CreateMoneyInDrawer(fakeMoneyArea.transform, moneyPrefabCache, true);
+        // 가짜 돈은 인스펙터에서 할당하므로 코드에서 생성하지 않음
+        // CreateMoneyInDrawer(fakeMoneyArea.transform, moneyPrefabCache, true);
 
         // === POS 거래내역 버튼 (포스기 옆에 부착) ===
         GameObject posMenuButton = new GameObject("POSMenuButton");
@@ -1073,10 +1074,8 @@ public class GameSetupMaster : MonoBehaviour
         POSMachineDisplay posDisplay = posMachine.AddComponent<POSMachineDisplay>();
         posDisplay.currentPriceText = currentPriceText;
         posDisplay.statusText = statusText;
-        posDisplay.drawerPanel = drawerPanel;
-        posDisplay.fakeDrawerPanel = fakeDrawerPanel;
+        posDisplay.drawerPanel = drawerPanel; // 진짜 돈 서랍만 할당 (현금통 버튼으로 토글)
         posDisplay.posMenuButton = posMenuBtn;
-        posDisplay.moneyPrefab = moneyPrefabCache;
 
         Debug.Log("Real POS Machine created with LCD, real money drawer, and fake money drawer");
 #endif
@@ -1115,6 +1114,8 @@ public class GameSetupMaster : MonoBehaviour
 #endif
     }
 
+    // CreateMoneyInDrawer 함수는 사용하지 않음 - 인스펙터에서 돈 UI 할당
+    /*
     void CreateMoneyInDrawer(Transform parent, GameObject moneyPrefab, bool isFake)
     {
         Debug.Log($"CreateMoneyInDrawer 호출됨! isFake: {isFake}, Parent: {parent.name}");
@@ -1160,6 +1161,7 @@ public class GameSetupMaster : MonoBehaviour
             }
         }
     }
+    */
 
     void CreatePOSSystem()
     {

@@ -10,25 +10,24 @@ public class POSMachineDisplay : MonoBehaviour
     [Header("POS Screen")]
     public TextMeshProUGUI currentPriceText; // 현재 스캔 중인 금액
     public TextMeshProUGUI statusText; // 상태 표시
-    public GameObject drawerPanel; // 현금 서랍 패널 (진짜 돈)
-    public GameObject fakeDrawerPanel; // 가짜 돈 서랍 패널
+    public GameObject drawerPanel; // 현금 서랍 패널 (진짜 돈 - 현금통 버튼으로 토글)
+    public Button cashDrawerButton; // 현금통 버튼 (인스펙터에서 할당)
     public Button posMenuButton; // POS 거래내역 버튼
-    public GameObject moneyPrefab; // 돈 Prefab
 
     private int currentDisplayAmount = 0;
 
     void Start()
     {
-        // 현금 서랍 버튼 찾아서 연결
-        Button cashDrawerBtn = transform.Find("CashDrawer")?.GetComponent<Button>();
-        if (cashDrawerBtn != null)
+        // 현금통 버튼 이벤트 연결
+        if (cashDrawerButton != null)
         {
-            cashDrawerBtn.onClick.AddListener(OpenCashDrawer);
-            Debug.Log("현금 서랍 버튼 연결됨!");
+            cashDrawerButton.onClick.RemoveAllListeners();
+            cashDrawerButton.onClick.AddListener(ToggleCashDrawer);
+            Debug.Log("[POSMachineDisplay] 현금통 버튼 연결됨!");
         }
         else
         {
-            Debug.LogError("CashDrawer 버튼을 찾을 수 없습니다!");
+            Debug.LogWarning("[POSMachineDisplay] cashDrawerButton이 할당되지 않았습니다!");
         }
 
         // CheckoutCounter의 이벤트 구독
@@ -54,6 +53,21 @@ public class POSMachineDisplay : MonoBehaviour
         UpdateDisplay(0);
     }
 
+    void ToggleCashDrawer()
+    {
+        if (drawerPanel != null)
+        {
+            drawerPanel.SetActive(!drawerPanel.activeSelf);
+            Debug.Log($"[POSMachineDisplay] 캐시 서랍 토글: {drawerPanel.activeSelf}");
+        }
+        else
+        {
+            Debug.LogWarning("[POSMachineDisplay] drawerPanel이 할당되지 않았습니다!");
+        }
+    }
+
+    // OpenCashDrawer는 GameSetupMaster에서 직접 토글 방식으로 처리되므로 사용 안함
+    /*
     void OpenCashDrawer()
     {
         Debug.Log("현금 서랍 열림!");
@@ -73,7 +87,10 @@ public class POSMachineDisplay : MonoBehaviour
 
         // 가짜 돈통은 항상 표시되므로 여기서 처리하지 않음
     }
+    */
 
+    // CreateMoneyInDrawer 함수는 사용하지 않음 - 인스펙터에서 돈 UI 할당
+    /*
     void CreateMoneyInDrawer(Transform parent, GameObject prefab, bool isFake)
     {
         Debug.Log($"CreateMoneyInDrawer 호출! isFake: {isFake}");
@@ -113,6 +130,7 @@ public class POSMachineDisplay : MonoBehaviour
             }
         }
     }
+    */
 
     public void UpdateDisplay(int amount)
     {
