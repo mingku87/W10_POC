@@ -17,6 +17,20 @@ public class CheckoutItemManager : MonoBehaviour
         Debug.Log($"[ItemManager] 상품 추가: {product.productData.productName} ({product.GetCurrentPrice()}원) - 총액: {totalAmount}원");
     }
 
+    public void RemoveItem(ProductInteractable product)
+    {
+        // 리스트에서 첫 번째로 일치하는 상품만 제거
+        if (scannedItems.Remove(product))
+        {
+            totalAmount -= product.GetCurrentPrice();
+            Debug.Log($"[ItemManager] 상품 제거: {product.productData.productName} ({product.GetCurrentPrice()}원) - 총액: {totalAmount}원");
+        }
+        else
+        {
+            Debug.LogWarning($"[ItemManager] 제거 실패: {product.productData.productName}을 찾을 수 없습니다.");
+        }
+    }
+
     public void AddSimplePrice(int price)
     {
         totalAmount += price;

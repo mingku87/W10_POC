@@ -355,11 +355,32 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             {
                 Destroy(gameObject);
             }
+            // 스캔 후 상품을 손님 구역에서 밖으로 빼면 삭제 + 금액 차감
+            else if (startZone != null) // 손님 구역에서 시작했는데 유효한 곳에 안 떨어뜨림
+            {
+                Debug.Log($"[상품 제거] 손님 구역에서 밖으로 드래그 - 상품 삭제 및 금액 차감");
+
+                // 계산대에서 금액 차감
+                if (CheckoutCounter.Instance != null)
+                {
+                    CheckoutCounter.Instance.RemoveScannedItem(productInteractable);
+                }
+
+                // 스캔 기록에서도 제거
+                if (BarcodeScanner.Instance != null)
+                {
+                    BarcodeScanner.Instance.RemoveScannedProductInstance(this);
+                }
+
+                // 상품 삭제
+                Destroy(gameObject);
+            }
             // 스캔 후 상품을 허공에 버리면 마지막 유효 위치로 복귀
             else
             {
                 transform.SetParent(lastParent);
                 rectTransform.anchoredPosition = lastValidPosition;
+                Debug.Log($"[상품] 스캔 존으로 복귀");
             }
         }
     }

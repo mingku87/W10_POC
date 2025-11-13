@@ -83,6 +83,15 @@ public class BarcodeScanner : MonoBehaviour, IDropHandler
     }
 
     /// <summary>
+    /// DraggableProduct 인스턴스 스캔 기록 제거
+    /// </summary>
+    public void RemoveScannedProductInstance(DraggableProduct productInstance)
+    {
+        scannedProductInstances.Remove(productInstance);
+        Debug.Log($"[스캔 존] 상품 인스턴스 기록 제거됨");
+    }
+
+    /// <summary>
     /// 새 손님이 올 때 스캔 내역 초기화
     /// </summary>
     public void ResetScannedProducts()

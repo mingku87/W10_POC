@@ -463,6 +463,20 @@ public class CheckoutCounter : MonoBehaviour
         Debug.Log($"[계산대] {product.productData.productName} 스캔 - 현재 총액: {itemManager.GetTotalAmount()}원");
     }
 
+    public void RemoveScannedItem(ProductInteractable product)
+    {
+        if (!isCustomerWaiting)
+        {
+            Debug.LogWarning("[계산대] 아직 손님이 없습니다!");
+            return;
+        }
+
+        itemManager.RemoveItem(product);
+        UpdateTotalDisplay();
+
+        Debug.Log($"[계산대] {product.productData.productName} 제거 - 현재 총액: {itemManager.GetTotalAmount()}원");
+    }
+
     public void AddSimplePrice(int price)
     {
         if (!isCustomerWaiting)
