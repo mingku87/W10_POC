@@ -47,6 +47,9 @@ public class Customer : MonoBehaviour
     public float fraudToleranceMax = 0.3f;  // 사기 한계 최대 (30%)
     private float currentFraudTolerance;    // 현재 손님의 사기 한계
 
+    [Header("수상함 감지")]
+    public float suspicionTimePenalty = 4f; // 수상한 행동 시 시간 제한 감소량 (초)
+
     [Header("이동 위치")]
     private Vector2 spawnPos;               // 스폰 위치 (입장/퇴장 위치)
     private Vector2 enterPos;               // 입장 후 쇼핑 위치
@@ -219,8 +222,8 @@ public class Customer : MonoBehaviour
         // 시간 초과 시
         if (isTimerActive && remainingTime <= 0)
         {
-            Debug.Log($"[손님] 시간 초과! 화나서 나갑니다. (제한시간: {checkoutTimeLimit:F1}초)");
-            LeaveAngry();
+            Debug.Log($"[손님 퇴장] ⏰ 시간 초과로 화나서 나감! (제한시간: {checkoutTimeLimit:F1}초 초과)");
+            LeaveAngry("시간 초과");
         }
     }
 
@@ -238,21 +241,49 @@ public class Customer : MonoBehaviour
 
         // 과금 비율 계산
         float overchargeRatio = (float)(scannedTotal - actualTotal) / actualTotal;
+        int overchargeAmount = scannedTotal - actualTotal;
 
         Debug.Log($"[손님] 과금 체크 - 실제: {actualTotal}원, 스캔: {scannedTotal}원, 비율: {overchargeRatio:P1}, 한계: {currentFraudTolerance:P0}");
 
         // 사기 한계 초과 시
         if (overchargeRatio > currentFraudTolerance)
         {
-            Debug.Log($"[손님] 사기 한계 초과! 화나서 나갑니다. (과금 {overchargeRatio:P1} > 한계 {currentFraudTolerance:P0})");
-            LeaveAngry();
+            Debug.Log($"[손님 퇴장] 💰 금액 초과로 화나서 나감! (과금 {overchargeAmount}원 = {overchargeRatio:P1} > 한계 {currentFraudTolerance:P0})");
+            LeaveAngry($"금액 초과 ({overchargeAmount}원 초과, {overchargeRatio:P1})");
             return false;
         }
 
         return true;
     }
 
-    void LeaveAngry()
+    /// <summary>
+    /// 수상한 행동 감지 시 호출 (같은 상품 두 번 스캔, 가짜 상품 생성 등)
+    /// 휴대폰 보는 중이 아닌 손님만 시간 제한 감소
+    /// </summary>
+    public void OnSuspiciousBehaviorDetected(string behaviorType)
+    {
+        if (!isTimerActive) return; // 타이머가 꺼져있으면 무시
+
+        // 수상함 감지 → 시간 제한 감소
+        remainingTime -= suspicionTimePenalty;
+
+        Debug.Log($"[손님] 👀 수상한 행동 감지! ({behaviorType}) - 시간 제한 {suspicionTimePenalty}초 감소 (남은시간: {remainingTime:F1}초)");
+
+        // 시간 게이지 업데이트
+        if (timeGaugeImage != null && checkoutTimeLimit > 0)
+        {
+            timeGaugeImage.fillAmount = Mathf.Clamp01(remainingTime / checkoutTimeLimit);
+        }
+
+        // 시간이 0 이하로 떨어지면 즉시 화내고 나감
+        if (remainingTime <= 0)
+        {
+            Debug.Log($"[손님 퇴장] ⏰ 수상한 행동으로 인한 시간 초과! ({behaviorType})");
+            LeaveAngry($"수상한 행동 감지 후 시간 초과 ({behaviorType})");
+        }
+    }
+
+    void LeaveAngry(string reason = "알 수 없음")
     {
         // 타이머 중지
         isTimerActive = false;
@@ -265,7 +296,7 @@ public class Customer : MonoBehaviour
         if (POSSystem.Instance != null)
         {
             POSSystem.Instance.AddMistake();
-            Debug.Log("[손님] 손님이 화나서 나감 - 실수 카운트 증가!");
+            Debug.Log($"[손님 퇴장 이유] {reason} - 실수 카운트 증가!");
         }
 
         // UI 숨기기

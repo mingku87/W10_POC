@@ -201,14 +201,24 @@ public class CheckoutCounter : MonoBehaviour
             POSSystem.Instance.AddMistake();
         }
 
-        // 가짜 돈을 성공적으로 건네면 지갑에 추가
-        if (!hasMistake && fakeMoney > 0)
+        // 현금 결제 총 이득 계산 및 지갑에 추가
+        if (!hasMistake && POSSystem.Instance != null)
         {
-            if (POSSystem.Instance != null)
+            // 1. 가짜 돈 이득 (거스름돈으로 가짜 돈 준 금액)
+            int fakeMoneyProfit = fakeMoney;
+
+            // 2. 사기 이득 (여러번 스캔해서 얻은 이득)
+            int totalOriginalPrice = itemManager.GetTotalOriginalPrice();
+            int scanProfit = itemManager.GetTotalAmount() - totalOriginalPrice;
+
+            // 3. 총 이득 = 가짜 돈 + 사기 이득
+            int totalProfit = fakeMoneyProfit + scanProfit;
+
+            if (totalProfit > 0)
             {
-                POSSystem.Instance.walletMoney += fakeMoney;
+                POSSystem.Instance.walletMoney += totalProfit;
                 POSSystem.Instance.UpdateWalletUI();
-                Debug.Log($"[계산대] 가짜 돈 {fakeMoney}원을 성공적으로 건넸습니다! 지갑에 추가!");
+                Debug.Log($"[계산대 - 현금결제] 총 이득 {totalProfit}원을 지갑에 추가! (가짜돈: {fakeMoneyProfit}원, 스캔사기: {scanProfit}원)");
             }
         }
 
@@ -225,17 +235,17 @@ public class CheckoutCounter : MonoBehaviour
 
         Debug.Log($"[계산대] 계산 처리 중... 총 {itemManager.GetScannedItemCount()}개 상품, {itemManager.GetTotalAmount()}원");
 
-        // 이익 계산
-        int totalOriginalPrice = itemManager.GetTotalOriginalPrice();
-        int profit = itemManager.GetTotalAmount() - totalOriginalPrice;
-
-        // 지갑에 이익만큼 돈 추가
-        if (POSSystem.Instance != null)
+        // 카드 결제인 경우만 여기서 이익 추가 (현금 결제는 ValidateChangeAndComplete에서 이미 처리됨)
+        if (isCardPayment && POSSystem.Instance != null)
         {
+            // 이익 계산
+            int totalOriginalPrice = itemManager.GetTotalOriginalPrice();
+            int profit = itemManager.GetTotalAmount() - totalOriginalPrice;
+
             POSSystem.Instance.walletMoney += profit;
             POSSystem.Instance.UpdateWalletUI();
 
-            Debug.Log($"[계산대] 이익 {profit}원을 지갑에 추가! (원가: {totalOriginalPrice}원, 받은금액: {itemManager.GetTotalAmount()}원)");
+            Debug.Log($"[계산대 - 카드결제] 사기 이익 {profit}원을 바로 지갑에 추가! (원가: {totalOriginalPrice}원, 받은금액: {itemManager.GetTotalAmount()}원)");
         }
 
         // 포스기 화면에 결제 완료 표시

@@ -77,8 +77,8 @@ public class CustomerZone : MonoBehaviour, IDropHandler
         DraggableProduct product = droppedObject.GetComponent<DraggableProduct>();
         if (product == null || !product.isClone) return;
 
-        // 스캔 완료된 상품만 배치 가능
-        if (!product.isScanned)
+        // 스캔 완료된 상품만 배치 가능 (한번이라도 스캔되었으면 OK)
+        if (!product.hasBeenScanned)
         {
             Debug.LogWarning("[손님 존] 스캔되지 않은 상품은 배치할 수 없습니다!");
             return;

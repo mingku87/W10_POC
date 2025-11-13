@@ -13,7 +13,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
     public float autoScanDelay = 0.1f; // 스캔 존 위에 머물러야 하는 시간 (초)
 
     public ProductInteractable productInteractable; // 연결된 상품 정보
-    public bool isScanned = false; // 스캔 완료 여부
+    public bool hasBeenScanned = false; // 한번이라도 스캔된 적이 있는지 (구역 배치용)
+    public bool isCurrentlyScanned = false; // 방금 스캔됨 (중복 스캔 방지용)
     public bool isClone = false; // 복사본 여부
 
     private Canvas canvas;
@@ -54,8 +55,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
     void Update()
     {
         // 드래그 중이고, 스캔 존 위에 있을 때 타이머 증가
-        // (스캔되지 않았거나, 스캔 존을 벗어났다가 다시 들어온 경우)
-        if (isDragging && isOverScanner && !isScanned)
+        // 여러 번 스캔 가능하도록 isScanned 조건 제거
+        if (isDragging && isOverScanner)
         {
             scanTimer += Time.deltaTime;
 
@@ -121,7 +122,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
 
         DraggableProduct cloneDraggable = dragClone.GetComponent<DraggableProduct>();
         cloneDraggable.isClone = true;
-        cloneDraggable.isScanned = false;
+        cloneDraggable.hasBeenScanned = false;
+        cloneDraggable.isCurrentlyScanned = false;
         cloneDraggable.productInteractable = this.productInteractable; // 원본 참조
 
         // Canvas 참조 설정
@@ -206,35 +208,25 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             isOverScanner = false;
             scanTimer = 0f;
 
-            // 스캔 존을 벗어나면 스캔 상태를 리셋 (다시 스캔 가능하도록)
-            if (isScanned)
-            {
-                isScanned = false;
+            // 스캔 존을 벗어나면 isCurrentlyScanned 리셋 (다시 스캔 가능하도록)
+            isCurrentlyScanned = false;
 
-                // 시각적 피드백 리셋
-                Image img = GetComponent<Image>();
-                if (img != null)
-                {
-                    img.color = Color.white; // 원래 색상으로 복원
-                }
-
-                Debug.Log($"[상품] 스캔 존 이탈 - 스캔 상태 리셋: {productInteractable.productData.productName}");
-            }
-            else
-            {
-                Debug.Log($"[상품] 스캔 존 이탈: {productInteractable.productData.productName}");
-            }
+            Debug.Log($"[상품] 스캔 존 이탈: {productInteractable.productData.productName} (hasBeenScanned: {hasBeenScanned}, isCurrentlyScanned 리셋)");
         }
-    }
-
-    /// <summary>
-    /// 자동 스캔 처리 - 스캔만 하고 드래그는 계속 유지
-    /// </summary>
+    }    /// <summary>
+         /// 자동 스캔 처리 - 스캔만 하고 드래그는 계속 유지
+         /// </summary>
     void AutoScan()
     {
-        if (isScanned) return;
+        // 방금 스캔된 상품은 다시 스캔 안됨
+        if (isCurrentlyScanned)
+        {
+            Debug.Log($"[상품] 방금 스캔됨 - 중복 방지");
+            return;
+        }
 
-        Debug.Log($"[상품] 자동 스캔 시작! {productInteractable.productData.productName}");
+        Debug.Log($"[상품] 자동 스캔 시작! {productInteractable.productData.productName} (hasBeenScanned: {hasBeenScanned})");
+
         OnScanned(); // 스캔 처리
 
         // OnScanned()에 의해 객체가 파괴되었는지 확인
@@ -243,8 +235,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             return;
         }
 
-        // 스캔 성공 시 - 드래그는 계속 유지, 스캔 존을 마지막 유효 위치로 설정
-        if (isScanned && BarcodeScanner.Instance != null)
+        // 스캔 완료 후 - 드래그는 계속 유지, 스캔 존을 마지막 유효 위치로 설정
+        if (BarcodeScanner.Instance != null)
         {
             // 스캔 존을 마지막 유효 위치로 기억 (드래그 끝날 때 여기로 돌아감)
             lastParent = BarcodeScanner.Instance.transform;
@@ -253,9 +245,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             // 스캔 존 효과
             BarcodeScanner.Instance.FlashScanEffect();
 
-            // 타이머 리셋 (중복 스캔 방지)
+            // 타이머 리셋
             scanTimer = 0f;
-            isOverScanner = false;
 
             Debug.Log($"[상품] 스캔 완료! 계속 드래그 가능");
         }
@@ -276,19 +267,24 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
+        Debug.Log($"[상품 드랍] 상품: {productInteractable.productData.productName}, hasBeenScanned: {hasBeenScanned}");
+
         // Raycast로 Drop 대상 확인
         var results = new System.Collections.Generic.List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
 
         CustomerZone endZone = null;
-        BrandChangeZone brandChangeZone = null; // ✅ 추가
+        BrandChangeZone brandChangeZone = null;
         bool validDropTargetFound = false;
 
         // 1. 드롭된 위치에서 유효한 타겟 찾기
+        Debug.Log($"[상품] Raycast 결과 개수: {results.Count}");
         foreach (var result in results)
         {
-            // ✅ BrandChangeZone 체크 추가
-            if (!isScanned) // 스캔 전 상품만 BrandChangeZone 사용 가능
+            Debug.Log($"[상품] Raycast Hit: {result.gameObject.name}");
+
+            // ✅ BrandChangeZone 체크
+            if (!hasBeenScanned) // 스캔 전 상품만 BrandChangeZone 사용 가능
             {
                 brandChangeZone = result.gameObject.GetComponent<BrandChangeZone>();
                 if (brandChangeZone != null)
@@ -300,17 +296,51 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 }
             }
 
-            // 스캔 후이고, 손님 존을 찾았을 때
-            if (isScanned)
+            // 스캔 후이고, 손님 존을 찾았을 때 (한번이라도 스캔됐으면 배치 가능)
+            Debug.Log($"[상품] CustomerZone 탐색 중... hasBeenScanned={hasBeenScanned}");
+            if (hasBeenScanned)
             {
+                // 현재 오브젝트에서 CustomerZone 찾기
                 endZone = result.gameObject.GetComponent<CustomerZone>();
                 if (endZone != null)
                 {
+                    Debug.Log($"[상품] CustomerZone 발견 (직접)! {endZone.gameObject.name}");
+                }
+
+                // 현재 오브젝트에 없으면 부모에서 찾기
+                if (endZone == null)
+                {
+                    endZone = result.gameObject.GetComponentInParent<CustomerZone>();
+                    if (endZone != null)
+                    {
+                        Debug.Log($"[상품] CustomerZone 발견 (부모)! {endZone.gameObject.name}");
+                    }
+                }
+
+                // 부모에도 없으면 자식에서 찾기
+                if (endZone == null)
+                {
+                    endZone = result.gameObject.GetComponentInChildren<CustomerZone>();
+                    if (endZone != null)
+                    {
+                        Debug.Log($"[상품] CustomerZone 발견 (자식)! {endZone.gameObject.name}");
+                    }
+                }
+
+                if (endZone != null)
+                {
                     validDropTargetFound = true;
+                    Debug.Log($"[상품] ✅ CustomerZone 최종 발견! {endZone.gameObject.name}");
                     break;
                 }
             }
+            else
+            {
+                Debug.Log($"[상품] 스캔되지 않아서 CustomerZone 탐색 스킵");
+            }
         }
+
+        Debug.Log($"[상품] 탐색 완료 - validDropTargetFound: {validDropTargetFound}, endZone: {(endZone != null ? endZone.gameObject.name : "null")}");
 
         // 2. 시작 존에서 제거 처리
         if (startZone != null && endZone != startZone)
@@ -324,7 +354,9 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             if (endZone != null)
             {
                 Debug.Log($"[상품] 손님 존에 배치 시도! {productInteractable.productData.productName}");
-                // 실제 배치는 CustomerZone.OnDrop에서 처리
+                // CustomerZone.OnDrop이 이미 호출되었을 것이므로 여기서는 추가 처리 불필요
+                // 만약 OnDrop이 호출되지 않았다면 직접 호출
+                endZone.OnDrop(eventData);
             }
         }
         // 4. 유효하지 않은 곳에 드롭한 경우 (허공)
@@ -333,7 +365,7 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             Debug.Log($"[상품] 잘못된 위치에 Drop - 원위치로 복귀");
 
             // 스캔 전 상품을 허공에 버리면 파괴
-            if (!isScanned)
+            if (!hasBeenScanned)
             {
                 Destroy(gameObject);
             }
@@ -359,11 +391,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
     /// </summary>
     void OnScanned()
     {
-        if (isScanned)
-        {
-            Debug.LogWarning("[상품] 이미 스캔된 상품입니다!");
-            return;
-        }
+        // 여러 번 스캔 가능하도록 체크 제거
+        Debug.Log($"[상품 스캔] {productInteractable.productData.productName} 스캔 시도 (이전 스캔 상태: hasBeenScanned={hasBeenScanned}, isCurrentlyScanned={isCurrentlyScanned})");
 
         // 손님이 원하는 상품인지 확인
         CustomerManager manager = FindFirstObjectByType<CustomerManager>();
@@ -400,29 +429,27 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 return;
             }
 
-            // 중복 스캔 체크 (멀쩡한 손님만)
-            if (customer.customerType != Customer.CustomerType.Drunk && !customer.isOnPhone)
+            // 중복 스캔 체크
+            bool isDuplicateScan = false;
+            if (BarcodeScanner.Instance != null &&
+                BarcodeScanner.Instance.IsProductScanned(matchedProduct))
             {
-                if (BarcodeScanner.Instance != null &&
-                    BarcodeScanner.Instance.IsProductScanned(matchedProduct))
+                isDuplicateScan = true;
+                Debug.LogWarning("[경고] 이미 스캔한 상품을 다시 스캔했습니다! (수상한 행동)");
+
+                // 수상한 행동 감지 → 손님의 시간 제한 감소
+                if (customer != null)
                 {
-                    Debug.LogWarning("[경고] 이미 스캔한 상품을 다시 스캔했습니다!");
-
-                    if (POSSystem.Instance != null)
-                    {
-                        POSSystem.Instance.AddMistake();
-                    }
-
-                    // 중복 스캔 - 복사본 삭제
-                    Destroy(gameObject);
-                    return;
+                    customer.OnSuspiciousBehaviorDetected("같은 상품 중복 스캔");
                 }
 
-                // 스캔 기록 추가
-                if (BarcodeScanner.Instance != null)
-                {
-                    BarcodeScanner.Instance.AddScannedProduct(matchedProduct);
-                }
+                // 중복 스캔도 계산에는 추가됨 (사기 가능)
+            }
+
+            // 스캔 기록 추가 (중복이 아니거나, 취객/휴대폰 보는 손님인 경우)
+            if (!isDuplicateScan && BarcodeScanner.Instance != null)
+            {
+                BarcodeScanner.Instance.AddScannedProduct(matchedProduct);
             }
         }
 
@@ -432,7 +459,9 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             CheckoutCounter.Instance.AddScannedItem(productInteractable);
         }
 
-        isScanned = true;
+        // 스캔 완료: 두 bool 모두 true로 설정
+        hasBeenScanned = true;
+        isCurrentlyScanned = true;
 
         // 시각적 피드백 (스캔 완료 표시)
         Image img = GetComponent<Image>();
