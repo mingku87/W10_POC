@@ -92,6 +92,7 @@ MonoBehaviour:
   moneyAmount: 1000
   isFakeMoney: 1
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &6663477966703481720
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -199,7 +200,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3403303987540179550
 RectTransform:
   m_ObjectHideFlags: 0
@@ -546,6 +547,7 @@ MonoBehaviour:
   moneyAmount: 500
   isFakeMoney: 0
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &7975472392786529763
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -982,6 +984,7 @@ MonoBehaviour:
   moneyAmount: 50000
   isFakeMoney: 1
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &4143354929150995982
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -1031,8 +1034,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -813.5337, y: -49.690063}
-  m_SizeDelta: {x: 171.3095, y: 261.8635}
+  m_AnchoredPosition: {x: -547, y: -2}
+  m_SizeDelta: {x: 280, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4543122582305850118
 CanvasRenderer:
@@ -1055,7 +1058,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1085,12 +1088,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statusText: {fileID: 2308603630853044119}
-  normalColor: {r: 0.8, g: 0.3, b: 0.3, a: 0.3}
-  highlightColor: {r: 0.8, g: 0.5, b: 0.3, a: 0.5}
-  successColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.6}
-  changeDelay: 0.5
-  fakeProductSpawnOffset: {x: 0, y: 0}
-  fakeProductPrefab: {fileID: 0}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
+  highlightColor: {r: 1, g: 1, b: 1, a: 0}
+  successColor: {r: 1, g: 1, b: 1, a: 0}
+  successEffectPrefab: {fileID: 0}
+  effectDuration: 0.5
 --- !u!1 &3138021186616441512
 GameObject:
   m_ObjectHideFlags: 0
@@ -1518,6 +1520,7 @@ MonoBehaviour:
   moneyAmount: 500
   isFakeMoney: 1
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &5016603288180620105
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2000,6 +2003,7 @@ MonoBehaviour:
   moneyAmount: 100
   isFakeMoney: 0
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &4305907666155001368
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2104,6 +2108,7 @@ MonoBehaviour:
   moneyAmount: 10000
   isFakeMoney: 0
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &7485725827748847667
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2509,6 +2514,7 @@ MonoBehaviour:
   moneyAmount: 5000
   isFakeMoney: 1
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &8954485570330264402
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2613,6 +2619,7 @@ MonoBehaviour:
   moneyAmount: 1000
   isFakeMoney: 0
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &1449535264576627095
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -3172,6 +3179,7 @@ MonoBehaviour:
   currentPriceText: {fileID: 8263776372537137646}
   statusText: {fileID: 5397471469868670009}
   drawerPanel: {fileID: 3760328267060189815}
+  cashDrawerButton: {fileID: 8779953925229386616}
   posMenuButton: {fileID: 8416889399388562849}
 --- !u!1 &8285316466445271936
 GameObject:
@@ -3207,7 +3215,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -329, y: -23}
+  m_AnchoredPosition: {x: -828, y: -23}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7772785590339634167
@@ -3401,6 +3409,7 @@ MonoBehaviour:
   moneyAmount: 5000
   isFakeMoney: 0
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &1530208793587419533
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -3584,6 +3593,7 @@ MonoBehaviour:
   moneyAmount: 10000
   isFakeMoney: 1
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &7545083616674519128
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -3688,6 +3698,7 @@ MonoBehaviour:
   moneyAmount: 50000
   isFakeMoney: 0
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &4831165984601441258
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -3792,6 +3803,7 @@ MonoBehaviour:
   moneyAmount: 100
   isFakeMoney: 1
   isClone: 0
+  isPlacedInDropZone: 0
 --- !u!225 &1133658779937247390
 CanvasGroup:
   m_ObjectHideFlags: 0
