@@ -28,7 +28,7 @@ public class CheckoutCounter : MonoBehaviour
 
     // 상태
     public bool isCustomerWaiting = false;
-    private Customer currentCustomer = null;
+    public Customer currentCustomer = null;
 
     // 결제 상태
     public enum PaymentState

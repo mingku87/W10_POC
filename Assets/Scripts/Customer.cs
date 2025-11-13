@@ -161,8 +161,8 @@ public class Customer : MonoBehaviour
         }
         StartCoroutine(CheckoutTimerRoutine());
 
-        // 멀쩡한 손님은 가끔 휴대폰을 봄 (디버그 모드에서는 비활성화)
-        if (customerType == CustomerType.Normal && !isDebugMode)
+        // 멀쩡한 손님은 가끔 휴대폰을 봄
+        if (customerType == CustomerType.Normal)
         {
             StartCoroutine(RandomlyUsePhone());
         }

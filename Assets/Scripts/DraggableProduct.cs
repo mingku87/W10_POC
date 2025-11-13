@@ -233,7 +233,7 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         // 방금 스캔된 상품은 다시 스캔 안됨
         if (isCurrentlyScanned)
         {
-            Debug.Log($"[상품] 방금 스캔됨 - 중복 방지");
+            //Debug.Log($"[상품] 방금 스캔됨 - 중복 방지");
             return;
         }
 

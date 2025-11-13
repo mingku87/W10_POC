@@ -287,6 +287,28 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         }
 
 
+        // ✨ Customer의 isOnPhone 상태 체크
+        Customer currentCustomer = FindCurrentCustomer();
+        if (currentCustomer != null)
+        {
+            if (currentCustomer.isOnPhone)
+            {
+                // 휴대폰 보는 중이면 실수 감지 안됨
+                Debug.Log($"[브랜드 커버] ✅ 손님이 휴대폰을 보는 중! 브랜드 변경 성공!");
+            }
+            else
+            {
+                // 휴대폰 안 보고 있으면 실수 카운트 증가
+                Debug.Log($"[브랜드 커버] ⚠️ 손님이 보고 있음! 실수 카운트 증가!");
+
+                // POSSystem의 실수 카운트 증가
+                if (POSSystem.Instance != null)
+                {
+                    POSSystem.Instance.AddMistake();
+                }
+            }
+        }
+
         // 제품 데이터를 가짜 제품으로 교체
         hoveredProduct.productData = fakeProductData;
         hoveredProduct.InitializeAsNewProduct();  // UI 갱신
@@ -343,6 +365,20 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         dragCanvasObj.AddComponent<GraphicRaycaster>();
 
         return dragCanvas;
+    }
+
+    /// <summary>
+    /// 현재 계산대에 있는 Customer 찾기
+    /// </summary>
+    Customer FindCurrentCustomer()
+    {
+        // CheckoutCounter의 currentCustomer 가져오기
+        if (CheckoutCounter.Instance != null)
+        {
+            return CheckoutCounter.Instance.currentCustomer;
+        }
+
+        return null;
     }
 
     /// <summary>
