@@ -84,25 +84,13 @@ public class ProductData
         isFake = false;
     }
 
-    /// <summary>
-    /// 브랜드 등급에 따른 가격 배율 반환
-    /// </summary>
-    public float GetBrandPriceMultiplier()
-    {
-        return currentBrand switch
-        {
-            BrandGrade.High => 1.5f,    // 상급: +50%
-            BrandGrade.Low => 1.0f,     // 하급: 기본가
-            _ => 1.0f
-        };
-    }
 
     /// <summary>
     /// 현재 브랜드 등급을 고려한 가격 반환
     /// </summary>
     public int GetAdjustedPrice()
     {
-        return Mathf.RoundToInt(originalPrice * GetBrandPriceMultiplier());
+        return Mathf.RoundToInt(originalPrice );
     }
 
     /// <summary>

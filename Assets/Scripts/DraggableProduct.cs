@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 /// 진열대 상품을 드래그하여:
 /// 1. 스캔 존 위에 일정 시간 머물면 자동 스캔
 /// 2. 손님 존으로 다시 드래그하여 배치
+/// ✅ Unity 6.0 호환 - ProductType + BrandGrade 기반 검증 (isFake 무시)
 /// </summary>
 public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
@@ -124,7 +125,16 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         cloneDraggable.isClone = true;
         cloneDraggable.hasBeenScanned = false;
         cloneDraggable.isCurrentlyScanned = false;
-        cloneDraggable.productInteractable = this.productInteractable; // 원본 참조
+
+        // ✅ 복사본의 ProductInteractable을 사용 (브랜드 변경 데이터 반영)
+        cloneDraggable.productInteractable = dragClone.GetComponent<ProductInteractable>();
+
+        // ProductInteractable이 없으면 원본 참조 (안전장치)
+        if (cloneDraggable.productInteractable == null)
+        {
+            cloneDraggable.productInteractable = this.productInteractable;
+            Debug.LogWarning("[복사본] ProductInteractable이 없어서 원본 참조 사용");
+        }
 
         // Canvas 참조 설정
         cloneDraggable.canvas = dragCanvas;
@@ -152,7 +162,7 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             cloneBtn.enabled = false;
         }
 
-        Debug.Log($"[상품] {productInteractable.productData.productName} 복사본 생성!");
+        Debug.Log($"[상품] {cloneDraggable.productInteractable.productData.productName} 복사본 생성! (브랜드: {cloneDraggable.productInteractable.productData.currentBrand}, 가격: {cloneDraggable.productInteractable.GetCurrentPrice()}원)");
 
         // 원본 이벤트 취소하고 복사본에게 드래그 이벤트 넘김
         eventData.pointerDrag = dragClone;
@@ -213,9 +223,11 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
 
             Debug.Log($"[상품] 스캔 존 이탈: {productInteractable.productData.productName} (hasBeenScanned: {hasBeenScanned}, isCurrentlyScanned 리셋)");
         }
-    }    /// <summary>
-         /// 자동 스캔 처리 - 스캔만 하고 드래그는 계속 유지
-         /// </summary>
+    }
+
+    /// <summary>
+    /// 자동 스캔 처리 - 스캔만 하고 드래그는 계속 유지
+    /// </summary>
     void AutoScan()
     {
         // 방금 스캔된 상품은 다시 스캔 안됨
@@ -379,20 +391,13 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         }
     }
 
-
-
-
-
-
-
-
     /// <summary>
     /// 스캔 처리 - 계산대에 금액 추가
+    /// ✅ ProductType + BrandGrade 기반 검증 (isFake 무시)
     /// </summary>
     void OnScanned()
     {
-        // 여러 번 스캔 가능하도록 체크 제거
-        Debug.Log($"[상품 스캔] {productInteractable.productData.productName} 스캔 시도 (이전 스캔 상태: hasBeenScanned={hasBeenScanned}, isCurrentlyScanned={isCurrentlyScanned})");
+        Debug.Log($"[상품 스캔] {productInteractable.productData.productName} 스캔 시도 (타입: {productInteractable.productData.productType}, 등급: {productInteractable.productData.currentBrand}, 가짜: {productInteractable.productData.isFake})");
 
         // 손님이 원하는 상품인지 확인
         CustomerManager manager = FindFirstObjectByType<CustomerManager>();
@@ -400,34 +405,39 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         {
             Customer customer = manager.currentCheckoutCustomer;
 
-            // 손님이 원하는 상품 목록에 있는지 확인
-            bool isWantedProduct = false;
+            // ✅ ProductType + BrandGrade 기반으로 매칭 (isFake는 무시)
+            bool isMatchingProduct = false;
             ProductInteractable matchedProduct = null;
 
             foreach (var wantedProduct in customer.selectedProducts)
             {
-                if (wantedProduct.productData.productName == productInteractable.productData.productName)
+                // 같은 ProductType이고 같은 BrandGrade면 통과 (isFake 무시)
+                if (wantedProduct.productData.productType == productInteractable.productData.productType &&
+                    wantedProduct.productData.currentBrand == productInteractable.productData.currentBrand)
                 {
-                    isWantedProduct = true;
+                    isMatchingProduct = true;
                     matchedProduct = wantedProduct;
+                    Debug.Log($"[검증 성공] 타입: {productInteractable.productData.productType}, 등급: {productInteractable.productData.currentBrand} 매칭!");
                     break;
                 }
             }
 
-            // 잘못된 상품 스캔 (경고만 표시, 실수 카운트는 계산 완료 시 체크)
-            if (!isWantedProduct)
+            // ✅ 잘못된 상품 스캔 (타입이나 등급이 다름)
+            if (!isMatchingProduct)
             {
-                Debug.LogWarning($"[경고] 손님이 원하지 않는 상품! (스캔: {productInteractable.productData.productName})");
+                Debug.LogWarning($"[검증 실패] 손님이 원하는 타입/등급이 아닙니다! (스캔: {productInteractable.productData.productType}/{productInteractable.productData.currentBrand})");
 
-                // 스캔 자체는 허용 (계산 완료 시 검증)
-                // 스캔 실패 - 복사본 삭제
-                // Destroy(gameObject);
-                // return;
+                // 계산 완료 시 체크되도록 스캔은 허용
+                // 나중에 CheckoutCounter에서 최종 검증
+            }
+            else
+            {
+                Debug.Log($"[검증 성공] {productInteractable.productData.productName} - 손님이 원하는 상품입니다!");
             }
 
             // 중복 스캔 체크
             bool isDuplicateScan = false;
-            if (BarcodeScanner.Instance != null &&
+            if (matchedProduct != null && BarcodeScanner.Instance != null &&
                 BarcodeScanner.Instance.IsProductScanned(matchedProduct))
             {
                 isDuplicateScan = true;
@@ -442,8 +452,8 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 // 중복 스캔도 계산에는 추가됨 (사기 가능)
             }
 
-            // 스캔 기록 추가 (중복이 아니거나, 취객/휴대폰 보는 손님인 경우)
-            if (!isDuplicateScan && BarcodeScanner.Instance != null)
+            // 스캔 기록 추가 (중복이 아니고 매칭된 경우)
+            if (!isDuplicateScan && matchedProduct != null && BarcodeScanner.Instance != null)
             {
                 BarcodeScanner.Instance.AddScannedProduct(matchedProduct);
             }
@@ -453,6 +463,7 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         if (CheckoutCounter.Instance != null)
         {
             CheckoutCounter.Instance.AddScannedItem(productInteractable);
+            Debug.Log($"[스캔 완료] {productInteractable.productData.productName} - 가격: {productInteractable.GetCurrentPrice()}원 (브랜드: {productInteractable.productData.currentBrand}, 타입: {productInteractable.productData.productType}, 가짜: {productInteractable.productData.isFake})");
         }
 
         // 스캔 완료: 두 bool 모두 true로 설정
@@ -465,8 +476,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         {
             img.color = new Color(0.8f, 1f, 0.8f); // 연한 초록색
         }
-
-        Debug.Log($"[스캔 완료] {productInteractable.productData.productName} - {productInteractable.GetCurrentPrice()}원");
     }
 
     /// <summary>

@@ -248,7 +248,7 @@ MonoBehaviour:
   isOnPhone: 0
   selectedProducts: []
   timeGaugeImage: {fileID: 2472014608404578398}
-  checkoutTimeLimit: 30
+  checkoutTimeLimit: 60
   fraudToleranceMin: 0.2
   fraudToleranceMax: 0.3
   suspicionTimePenalty: 2

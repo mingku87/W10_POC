@@ -13,6 +13,10 @@ public class CustomerManager : MonoBehaviour
     [Tooltip("손님 등장 간격 (초)")]
     public float spawnInterval = 15f;
 
+    [Header("Debug Settings")]
+    [Tooltip("디버그 모드: 모든 아이템을 1개씩 구매하는 손님 생성")]
+    public bool isDebugMode = false;
+
     [Header("References")]
     public GameObject customerPrefab;
 
@@ -143,15 +147,27 @@ public class CustomerManager : MonoBehaviour
             // 매니저 참조 전달
             customer.manager = this;
 
+            // ✨ 디버그 모드 설정 전달
+            customer.isDebugMode = isDebugMode;
+
             // 손님 타입 랜덤 결정 (80% 멀쩡한 손님, 20% 취객)
-            float randomValue = Random.value;
-            if (randomValue < 0.2f) // 20% 확률로 취객
+            // 디버그 모드에서는 항상 일반 손님
+            if (isDebugMode)
             {
-                customer.customerType = Customer.CustomerType.Drunk;
+                customer.customerType = Customer.CustomerType.Normal;
+                Debug.Log("[매니저] 🔧 디버그 모드: 모든 아이템 1개씩 구매하는 손님 생성");
             }
             else
             {
-                customer.customerType = Customer.CustomerType.Normal;
+                float randomValue = Random.value;
+                if (randomValue < 0.2f) // 20% 확률로 취객
+                {
+                    customer.customerType = Customer.CustomerType.Drunk;
+                }
+                else
+                {
+                    customer.customerType = Customer.CustomerType.Normal;
+                }
             }
 
             // RectTransform 설정 (스폰 위치에 생성)

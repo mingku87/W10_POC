@@ -26,7 +26,9 @@ public class Customer : MonoBehaviour
     public CustomerType customerType = CustomerType.Normal;
     public Image customerImage; // UI Image (SpriteRenderer 대신)
 
-
+    [Header("디버그 설정")]
+    [Tooltip("디버그 모드: 모든 아이템을 1개씩 구매")]
+    public bool isDebugMode = false;
 
     [Header("상태")]
     public bool isWaiting = true;           // 쇼핑 중
@@ -38,7 +40,7 @@ public class Customer : MonoBehaviour
 
     [Header("시간 제한")]
     public Image timeGaugeImage;            // 시간 게이지 이미지
-    public float checkoutTimeLimit = 30f;   // 계산 제한 시간 (일반 손님 기본값)
+    public float checkoutTimeLimit = 60f;   // 계산 제한 시간 (일반 손님 기본값)
     private float remainingTime;            // 남은 시간
     private bool isTimerActive = false;     // 타이머 활성화 여부
 
@@ -48,7 +50,7 @@ public class Customer : MonoBehaviour
     private float currentFraudTolerance;    // 현재 손님의 사기 한계
 
     [Header("수상함 감지")]
-    public float suspicionTimePenalty = 4f; // 수상한 행동 시 시간 제한 감소량 (초)
+    public float suspicionTimePenalty = 20f; // 수상한 행동 시 시간 제한 감소량 (초)
 
     [Header("이동 위치")]
     private Vector2 spawnPos;               // 스폰 위치 (입장/퇴장 위치)
@@ -83,8 +85,16 @@ public class Customer : MonoBehaviour
             timeGaugeImage.gameObject.SetActive(false); // 계산대 도착 전까지 숨김
         }
 
+        // ✨ 디버그 모드에서는 시간 제한과 사기 한계를 넉넉하게 설정
+        if (isDebugMode)
+        {
+            checkoutTimeLimit = 120f; // 2분
+            fraudToleranceMin = 0.95f; // 95%
+            fraudToleranceMax = 0.99f; // 99%
+            Debug.Log("[손님] 🔧 디버그 모드: 시간 제한 120초, 사기 한계 95~99%");
+        }
         // 손님 타입에 따라 시간 제한 및 사기 한계 설정
-        if (customerType == CustomerType.Drunk)
+        else if (customerType == CustomerType.Drunk)
         {
             checkoutTimeLimit = Random.Range(50f, 70f); // 취객: 50~70초
             fraudToleranceMin = 0.7f; // 70%
@@ -151,8 +161,8 @@ public class Customer : MonoBehaviour
         }
         StartCoroutine(CheckoutTimerRoutine());
 
-        // 멀쩡한 손님은 가끔 휴대폰을 봄
-        if (customerType == CustomerType.Normal)
+        // 멀쩡한 손님은 가끔 휴대폰을 봄 (디버그 모드에서는 비활성화)
+        if (customerType == CustomerType.Normal && !isDebugMode)
         {
             StartCoroutine(RandomlyUsePhone());
         }
@@ -365,6 +375,7 @@ public class Customer : MonoBehaviour
     /// <summary>
     /// 상품 선택 로직 - 가짜 제품(isFake=true)은 선택하지 않음
     /// 최대 3종류의 상품만 선택하고, 각 종류당 1~5개까지 주문
+    /// ✨ 디버그 모드: 모든 아이템을 1개씩 선택
     /// </summary>
     void SelectProducts()
     {
@@ -382,6 +393,15 @@ public class Customer : MonoBehaviour
                 continue;
             }
 
+            // ✨ 디버그 모드: 모든 상품을 무조건 구매 후보에 추가
+            if (isDebugMode)
+            {
+                validProducts.Add(product);
+                Debug.Log($"[손님] 🔧 디버그: {product.productData.productName} 자동 선택!");
+                continue;
+            }
+
+            // 일반 모드: 가격에 따른 구매 확률 계산
             int originalPrice = product.productData.originalPrice;
             int currentPrice = product.GetCurrentPrice();
 
@@ -407,7 +427,19 @@ public class Customer : MonoBehaviour
             return;
         }
 
-        // 최대 3종류까지만 선택
+        // ✨ 디버그 모드: 모든 유효 상품을 1개씩 선택
+        if (isDebugMode)
+        {
+            foreach (ProductInteractable product in validProducts)
+            {
+                selectedProducts.Add(product);
+                Debug.Log($"[손님] 🔧 디버그: {product.productData.productName} x 1개 선택!");
+            }
+            Debug.Log($"[손님] 🔧 디버그 모드: 총 {validProducts.Count}종류, {selectedProducts.Count}개 상품 선택 완료!");
+            return;
+        }
+
+        // 일반 모드: 최대 3종류까지만 선택
         int maxProductTypes = Mathf.Min(3, validProducts.Count);
         int selectedTypesCount = Random.Range(1, maxProductTypes + 1); // 1~3종류
 
@@ -464,6 +496,10 @@ public class Customer : MonoBehaviour
 
         Debug.Log("═══════════════════════════════════");
         Debug.Log($"🛒 손님의 쇼핑 목록 (총 {selectedProducts.Count}개)");
+        if (isDebugMode)
+        {
+            Debug.Log("🔧 디버그 모드: 모든 아이템 1개씩");
+        }
         Debug.Log("───────────────────────────────────");
 
         foreach (var item in groupedProducts)

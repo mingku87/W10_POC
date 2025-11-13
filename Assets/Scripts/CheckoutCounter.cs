@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// 계산대 메인 컨트롤러 - 상태 관리 및 결제 흐름 제어
+/// ✅ Unity 6.0 호환 - ProductType + BrandGrade 기반 검증 (isFake 무시)
 /// </summary>
 public class CheckoutCounter : MonoBehaviour
 {
@@ -15,7 +16,7 @@ public class CheckoutCounter : MonoBehaviour
     public float itemSpacing = 1.5f;
 
     [Header("UI")]
-    public Button processPaymentButton; // <--- 추가: 인스펙터에서 할당할 실제 UI 버튼
+    public Button processPaymentButton; // 인스펙터에서 할당할 실제 UI 버튼
 
     [Header("손님 존 참조")]
     public CustomerZone customerZone; // CustomerZone 컴포넌트 참조
@@ -76,7 +77,7 @@ public class CheckoutCounter : MonoBehaviour
             }
         }
 
-        // <--- 추가: 버튼 리스너 등록 및 초기 비활성화
+        // 버튼 리스너 등록 및 초기 비활성화
         if (processPaymentButton != null)
         {
             processPaymentButton.onClick.AddListener(HandleCheckoutInput);
@@ -97,11 +98,9 @@ public class CheckoutCounter : MonoBehaviour
         }
     }
 
-    // <--- 수정: 버튼에서 호출할 수 있도록 private이 아닌 (default) 메서드로 둠
-    // (public으로 변경해도 무방합니다)
     void HandleCheckoutInput()
     {
-        // <--- 추가: 버튼이 활성화되었더라도, 안전을 위해 한 번 더 체크
+        // 버튼이 활성화되었더라도, 안전을 위해 한 번 더 체크
         if (!isCustomerWaiting) return;
 
         if (currentPaymentState == PaymentState.Scanning)
@@ -235,37 +234,87 @@ public class CheckoutCounter : MonoBehaviour
 
         Debug.Log($"[계산대] 계산 처리 중... 총 {itemManager.GetScannedItemCount()}개 상품, {itemManager.GetTotalAmount()}원");
 
-        // 손님이 원하는 상품 목록과 비교하여 검증
+        // ✅ ProductType + BrandGrade 기반으로 검증 (isFake 무시)
         bool hasWrongProduct = false;
         if (currentCustomer != null)
         {
             List<ProductInteractable> scannedItems = itemManager.GetScannedItems();
 
-            foreach (var scannedItem in scannedItems)
+            // 손님이 원하는 상품 타입/등급별 개수 카운트
+            Dictionary<string, int> wantedProducts = new Dictionary<string, int>();
+            foreach (var wantedProduct in currentCustomer.selectedProducts)
             {
-                bool isWanted = false;
-                foreach (var wantedProduct in currentCustomer.selectedProducts)
+                string key = $"{wantedProduct.productData.productType}_{wantedProduct.productData.currentBrand}";
+                if (wantedProducts.ContainsKey(key))
                 {
-                    if (wantedProduct.productData.productName == scannedItem.productData.productName)
-                    {
-                        isWanted = true;
-                        break;
-                    }
+                    wantedProducts[key]++;
                 }
-
-                if (!isWanted)
+                else
                 {
-                    hasWrongProduct = true;
-                    Debug.LogWarning($"[계산 검증] 손님이 원하지 않는 상품 발견: {scannedItem.productData.productName}");
-                    break;
+                    wantedProducts[key] = 1;
                 }
             }
+
+            // 스캔된 상품 타입/등급별 개수 카운트
+            Dictionary<string, int> scannedProducts = new Dictionary<string, int>();
+            foreach (var scannedItem in scannedItems)
+            {
+                string key = $"{scannedItem.productData.productType}_{scannedItem.productData.currentBrand}";
+                if (scannedProducts.ContainsKey(key))
+                {
+                    scannedProducts[key]++;
+                }
+                else
+                {
+                    scannedProducts[key] = 1;
+                }
+            }
+
+            // 검증: 각 타입/등급별로 개수가 맞는지 확인
+            Debug.Log("═══════════════════════════════════");
+            Debug.Log("[계산 검증] ProductType + BrandGrade 기반 검증 시작");
+            Debug.Log("───────────────────────────────────");
+
+            foreach (var wanted in wantedProducts)
+            {
+                string typeGrade = wanted.Key;
+                int wantedCount = wanted.Value;
+                int scannedCount = scannedProducts.ContainsKey(typeGrade) ? scannedProducts[typeGrade] : 0;
+
+                Debug.Log($"  • {typeGrade}: 필요 {wantedCount}개, 스캔 {scannedCount}개");
+
+                if (scannedCount < wantedCount)
+                {
+                    hasWrongProduct = true;
+                    Debug.LogWarning($"[검증 실패] {typeGrade} 부족! (필요: {wantedCount}, 스캔: {scannedCount})");
+                }
+            }
+
+            // 추가로 스캔된 상품이 있는지 확인
+            foreach (var scanned in scannedProducts)
+            {
+                string typeGrade = scanned.Key;
+                int scannedCount = scanned.Value;
+                int wantedCount = wantedProducts.ContainsKey(typeGrade) ? wantedProducts[typeGrade] : 0;
+
+                if (scannedCount > wantedCount)
+                {
+                    hasWrongProduct = true;
+                    Debug.LogWarning($"[검증 실패] {typeGrade} 초과! (필요: {wantedCount}, 스캔: {scannedCount})");
+                }
+            }
+
+            Debug.Log("═══════════════════════════════════");
 
             // 잘못된 상품이 있으면 실수 카운트 1회
             if (hasWrongProduct && POSSystem.Instance != null)
             {
                 POSSystem.Instance.AddMistake();
                 Debug.LogWarning("[계산 검증] 잘못된 상품이 포함되어 실수 카운트 +1");
+            }
+            else
+            {
+                Debug.Log("[계산 검증] ✅ 모든 상품이 정확합니다! (가짜 여부는 무시됨)");
             }
         }
 
@@ -310,7 +359,7 @@ public class CheckoutCounter : MonoBehaviour
         isCardPayment = false;
         customerPaidAmount = 0;
 
-        // ✨ 손님 존의 모든 상품 복사본 삭제
+        // 손님 존의 모든 상품 복사본 삭제
         ClearCustomerZone();
 
         // 계산대 정리
@@ -325,7 +374,7 @@ public class CheckoutCounter : MonoBehaviour
         isCustomerWaiting = false;
         currentCustomer = null;
 
-        // <--- 추가: 버튼 비활성화
+        // 버튼 비활성화
         if (processPaymentButton != null)
         {
             processPaymentButton.interactable = false;
@@ -374,7 +423,7 @@ public class CheckoutCounter : MonoBehaviour
         currentCustomer = customer;
         isCustomerWaiting = true;
 
-        // <--- 추가: 버튼 활성화
+        // 버튼 활성화
         if (processPaymentButton != null)
         {
             processPaymentButton.interactable = true;
@@ -383,9 +432,9 @@ public class CheckoutCounter : MonoBehaviour
         Debug.Log("[계산대] 손님 대기 중!");
         Debug.Log("═══════════════════════════════════");
         Debug.Log("📋 게임 플레이:");
-        Debug.Log("  1. 진열대 상품을 스캔 존으로 드래그");
-        Debug.Log("  2. 스캔된 상품을 손님 존으로 드래그");
-        Debug.Log("  3. 모든 상품 스캔 완료 후 C키로 결제"); // <--- (이 로그는 나중에 버튼 이름으로 바꾸셔도 됩니다)
+        Debug.Log("  1. 진열대 상품을 스캔 존으로 드래그");
+        Debug.Log("  2. 스캔된 상품을 손님 존으로 드래그");
+        Debug.Log("  3. 모든 상품 스캔 완료 후 C키로 결제");
         Debug.Log("═══════════════════════════════════");
 
         // 스캔 존 초기화
@@ -451,7 +500,7 @@ public class CheckoutCounter : MonoBehaviour
         // 결제 UI 정리
         displayManager.ClearPaymentUI();
 
-        // <--- 추가: 버튼 비활성화
+        // 버튼 비활성화
         if (processPaymentButton != null)
         {
             processPaymentButton.interactable = false;
