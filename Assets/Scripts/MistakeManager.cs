@@ -11,6 +11,7 @@ public class MistakeManager : MonoBehaviour
 
     [Header("UI References")]
     public TextMeshProUGUI mistakeStackText; // 실수 스택 UI
+    public TextMeshProUGUI mistakeAllText; // 실수 스택 UI
     public GameObject gameOverPanel; // 게임오버 패널
 
     [Header("Mistake Settings")]
@@ -76,6 +77,8 @@ public class MistakeManager : MonoBehaviour
 
         // 실수 유형별 로그 메시지
         string mistakeMessage = GetMistakeMessage(mistakeType, additionalInfo);
+
+        mistakeAllText.text = mistakeMessage;
 
         if (showDebugLogs)
         {
@@ -192,6 +195,12 @@ public class MistakeManager : MonoBehaviour
         }
 
         return baseMessage;
+    }
+
+
+    public void ClearText()
+    {
+        mistakeAllText.text = "";
     }
 
     /// <summary>

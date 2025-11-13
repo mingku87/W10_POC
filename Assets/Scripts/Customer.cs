@@ -123,6 +123,9 @@ public class Customer : MonoBehaviour
         yield return StartCoroutine(MoveToPosition(enterPos, 2f));
         Debug.Log("[손님] 입장 완료!");
 
+        MistakeManager.Instance?.ClearText();   
+
+
         // 타입에 따라 스프라이트 설정 (CustomerManager에서 이미 설정됨)
         StartCoroutine(ShoppingRoutine());
     }
@@ -601,6 +604,7 @@ public class Customer : MonoBehaviour
 
         // 퇴장 애니메이션 시작 (HideUI는 코루틴 안에서 호출)
         StartCoroutine(ExitRoutine());
+
     }
 
     IEnumerator ExitRoutine()
