@@ -1120,11 +1120,11 @@ MonoBehaviour:
     originalBrand: 1
   brandList:
   - targetProductType: 1
-    brandCoverSprite: {fileID: 4380598853869423365, guid: 587de048456c7a246b21119e30c0d68a, type: 3}
+    brandCoverSprite: {fileID: -286035330060491936, guid: 1a02768800f307a4394e845e25e26183, type: 3}
     targetBrand: 1
     description: 
   - targetProductType: 3
-    brandCoverSprite: {fileID: -1921068477310165922, guid: 773abeb4a66d740468ba76b813f42cd2, type: 3}
+    brandCoverSprite: {fileID: 2670802870929029230, guid: 300674b118093f24bb070cc2395015cf, type: 3}
     targetBrand: 1
     description: 
   productButtonPrefab: {fileID: 5241154341347047127, guid: d2ec3009fa656f446a335d3d93b9d3d1, type: 3}
