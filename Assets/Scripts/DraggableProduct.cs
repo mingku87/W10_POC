@@ -435,13 +435,13 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 Debug.Log($"[검증 성공] {productInteractable.productData.productName} - 손님이 원하는 상품입니다!");
             }
 
-            // 중복 스캔 체크
+            // 중복 스캔 체크 (동일한 DraggableProduct 인스턴스를 여러번 스캔했는지)
             bool isDuplicateScan = false;
-            if (matchedProduct != null && BarcodeScanner.Instance != null &&
-                BarcodeScanner.Instance.IsProductScanned(matchedProduct))
+            if (BarcodeScanner.Instance != null &&
+                BarcodeScanner.Instance.IsProductInstanceScanned(this))
             {
                 isDuplicateScan = true;
-                Debug.LogWarning("[경고] 이미 스캔한 상품을 다시 스캔했습니다! (수상한 행동)");
+                Debug.LogWarning("[경고] 동일한 상품을 다시 스캔했습니다! (수상한 행동)");
 
                 // 수상한 행동 감지 → 손님의 시간 제한 감소
                 if (customer != null)
@@ -452,10 +452,16 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 // 중복 스캔도 계산에는 추가됨 (사기 가능)
             }
 
-            // 스캔 기록 추가 (중복이 아니고 매칭된 경우)
-            if (!isDuplicateScan && matchedProduct != null && BarcodeScanner.Instance != null)
+            // 스캔 기록 추가 (중복이 아닌 경우)
+            if (!isDuplicateScan && BarcodeScanner.Instance != null)
             {
-                BarcodeScanner.Instance.AddScannedProduct(matchedProduct);
+                BarcodeScanner.Instance.AddScannedProductInstance(this); // 이 인스턴스를 기록
+
+                // ProductInteractable도 기록 (기존 로직 유지)
+                if (matchedProduct != null)
+                {
+                    BarcodeScanner.Instance.AddScannedProduct(matchedProduct);
+                }
             }
         }
 
