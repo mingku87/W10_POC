@@ -131,15 +131,16 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        // 원래 위치로 복귀 (월드 좌표 복원)
-        rectTransform.position = originalWorldPosition;  // 먼저 월드 좌표 설정
-        transform.SetParent(originalParent, true);  // 월드 좌표 유지하면서 부모 설정
+        // 부모 복귀 (로컬 좌표 유지)
+        transform.SetParent(originalParent, false);
 
-        // LayoutElement가 있으면 재활성화 (HorizontalLayoutGroup 영향 복구)
+        // LayoutElement 재활성화
         if (layoutElement != null)
         {
             layoutElement.ignoreLayout = false;
         }
+
+        // LayoutGroup에게 위치를 맡김 - 수동 위치 설정 제거!
 
         Debug.Log($"[브랜드 커버] 드래그 종료");
     }
@@ -274,6 +275,18 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
         canvasGroup.alpha = 0.7f;
 
+
+
+
+        if (hoveredProduct == null)
+        {
+            Debug.LogWarning("[브랜드 커버] 변경 처리 직전에 호버가 해제되었습니다. 작업을 중단합니다.");
+            isProcessing = false;
+
+            yield break;
+        }
+
+
         // 제품 데이터를 가짜 제품으로 교체
         hoveredProduct.productData = fakeProductData;
         hoveredProduct.InitializeAsNewProduct();  // UI 갱신
@@ -296,8 +309,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         canvasGroup.blocksRaycasts = true;
 
         // 원위치로 복귀 (월드 좌표 복원)
-        rectTransform.position = originalWorldPosition;  // 먼저 월드 좌표 설정
-        transform.SetParent(originalParent, true);  // 월드 좌표 유지하면서 부모 설정
+        transform.SetParent(originalParent, false);  // 월드 좌표 유지하면서 부모 설정
 
         // LayoutElement가 있으면 재활성화
         if (layoutElement != null)
