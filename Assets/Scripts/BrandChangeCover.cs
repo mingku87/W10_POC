@@ -312,12 +312,28 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             }
         }
 
-        // 제품 데이터를 가짜 제품으로 교체
-        hoveredProduct.productData = fakeProductData;
-        hoveredProduct.InitializeAsNewProduct();  // UI 갱신
-        hoveredProduct.UpdateBrandUI();  // 바코드 가격 업데이트 (스캔 시 올바른 가격으로 찍히도록)
+        // 원본 제품의 실제 원가 저장 (하급 브랜드 가격)
+        int originalRealCost = hoveredProduct.productData.originalPrice;
 
-        Debug.Log($"[브랜드 커버] 브랜드 변경 완료! {fakeProductData.productName} → {fakeProductData.currentBrand}등급 (가짜), 새 가격: {hoveredProduct.GetCurrentPrice()}원");
+        // 가짜 제품의 판매가 (상급 브랜드 가격)
+        int fakePrice = fakeProductData.originalPrice;
+
+        // ProductData는 원본 그대로 유지하고, BarcodeData만 변경
+        hoveredProduct.SetBarcode(new BarcodeData("FAKE", fakePrice, originalRealCost));
+
+        // 시각 효과를 위해 ProductData의 isFake만 true로 설정
+        hoveredProduct.productData.isFake = true;
+        hoveredProduct.productData.originalBrand = hoveredProduct.productData.currentBrand;  // 원래 브랜드 저장
+        hoveredProduct.productData.currentBrand = brandData.targetBrand;  // 현재 브랜드 변경
+
+        // UI 갱신
+        hoveredProduct.UpdateUI();
+
+        Debug.Log($"[브랜드 커버] 브랜드 변경 완료!");
+        Debug.Log($"  - 제품: {hoveredProduct.productData.productName}");
+        Debug.Log($"  - 원래 브랜드: {hoveredProduct.productData.originalBrand} (실제 원가: {originalRealCost}원)");
+        Debug.Log($"  - 가짜 브랜드: {hoveredProduct.productData.currentBrand} (판매가: {fakePrice}원)");
+        Debug.Log($"  - 이익: {fakePrice - originalRealCost}원");
 
         // 성공 효과
         if (BrandChangeZone.Instance != null)

@@ -86,14 +86,6 @@ public class ProductData
 
 
     /// <summary>
-    /// 현재 브랜드 등급을 고려한 가격 반환
-    /// </summary>
-    public int GetAdjustedPrice()
-    {
-        return Mathf.RoundToInt(originalPrice );
-    }
-
-    /// <summary>
     /// 제품 정보를 디버그 문자열로 반환
     /// </summary>
     public override string ToString()
