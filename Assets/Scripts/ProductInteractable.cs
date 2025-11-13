@@ -48,7 +48,7 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
         }
 
         // 브랜드 등급을 고려한 가격 설정
-        int initialPrice = productData.GetAdjustedPrice();
+        int initialPrice = productData.originalPrice;
         currentBarcode = new BarcodeData("ORIGINAL", initialPrice);
 
         UpdateUI();
@@ -152,7 +152,7 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
         if (productData == null) return;
 
         // 브랜드 등급에 따른 새로운 가격 계산
-        int newPrice = productData.GetAdjustedPrice();
+        int newPrice = productData.originalPrice;
 
         // 바코드 가격 업데이트
         currentBarcode = new BarcodeData("ORIGINAL", newPrice);
