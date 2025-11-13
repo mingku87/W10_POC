@@ -17,6 +17,7 @@ public class BarcodeScanner : MonoBehaviour, IDropHandler
     private Image scannerImage; // UI Image
     private RectTransform rectTransform;
     private HashSet<ProductInteractable> scannedProducts = new HashSet<ProductInteractable>();
+    private HashSet<DraggableProduct> scannedProductInstances = new HashSet<DraggableProduct>(); // 실제 드래그 인스턴스 추적
 
     void Awake()
     {
@@ -58,6 +59,14 @@ public class BarcodeScanner : MonoBehaviour, IDropHandler
     }
 
     /// <summary>
+    /// 특정 DraggableProduct 인스턴스가 이미 스캔되었는지 확인
+    /// </summary>
+    public bool IsProductInstanceScanned(DraggableProduct productInstance)
+    {
+        return scannedProductInstances.Contains(productInstance);
+    }
+
+    /// <summary>
     /// 스캔 기록 추가
     /// </summary>
     public void AddScannedProduct(ProductInteractable product)
@@ -66,11 +75,20 @@ public class BarcodeScanner : MonoBehaviour, IDropHandler
     }
 
     /// <summary>
+    /// DraggableProduct 인스턴스 스캔 기록 추가
+    /// </summary>
+    public void AddScannedProductInstance(DraggableProduct productInstance)
+    {
+        scannedProductInstances.Add(productInstance);
+    }
+
+    /// <summary>
     /// 새 손님이 올 때 스캔 내역 초기화
     /// </summary>
     public void ResetScannedProducts()
     {
         scannedProducts.Clear();
+        scannedProductInstances.Clear(); // 인스턴스 추적도 초기화
 
         // 스캔 존에 남아있는 모든 복사본 삭제
         foreach (Transform child in transform)
