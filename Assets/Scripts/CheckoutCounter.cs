@@ -124,7 +124,7 @@ public class CheckoutCounter : MonoBehaviour
     {
         if (itemManager.GetScannedItemCount() == 0)
         {
-            Debug.LogWarning("[계산대] 스캔한 상품이 없습니다!");
+            //Debug.LogWarning("[계산대] 스캔한 상품이 없습니다!");
             return;
         }
 
@@ -144,12 +144,12 @@ public class CheckoutCounter : MonoBehaviour
 
         if (isCardPayment)
         {
-            Debug.Log("[계산대] 손님이 카드로 결제합니다. C키를 한번 더 눌러 완료하세요.");
+            //Debug.Log("[계산대] 손님이 카드로 결제합니다. C키를 한번 더 눌러 완료하세요.");
             displayManager.ShowPaymentMethod("카드");
         }
         else
         {
-            Debug.Log("[계산대] 손님이 현금으로 결제합니다. 돈을 받고 거스름돈을 준비하세요.");
+            //Debug.Log("[계산대] 손님이 현금으로 결제합니다. 돈을 받고 거스름돈을 준비하세요.");
             customerPaidAmount = displayManager.SpawnCustomerMoney(itemManager.GetTotalAmount());
             displayManager.ShowPaymentMethod($"현금 {customerPaidAmount}원");
             currentPaymentState = PaymentState.WaitingChange;
@@ -163,7 +163,7 @@ public class CheckoutCounter : MonoBehaviour
         ChangeMoneyDropZone changeZone = FindFirstObjectByType<ChangeMoneyDropZone>();
         if (changeZone == null)
         {
-            Debug.LogWarning("[계산대] 거스름돈 영역을 찾을 수 없습니다!");
+            //Debug.LogWarning("[계산대] 거스름돈 영역을 찾을 수 없습니다!");
             return;
         }
 
@@ -171,7 +171,7 @@ public class CheckoutCounter : MonoBehaviour
         int actualChange = changeZone.GetTotalRealMoney();
         int fakeMoney = changeZone.GetTotalFakeMoney();
 
-        Debug.Log($"[계산대] 예상 거스름돈: {expectedChange}원, 실제: {actualChange}원, 가짜: {fakeMoney}원");
+        //Debug.Log($"[계산대] 예상 거스름돈: {expectedChange}원, 실제: {actualChange}원, 가짜: {fakeMoney}원");
 
         // 손님 타입 확인
         CustomerManager manager = FindFirstObjectByType<CustomerManager>();
@@ -191,7 +191,7 @@ public class CheckoutCounter : MonoBehaviour
         int totalGivenChange = actualChange + fakeMoney;
         if (!isCustomerDrunk && totalGivenChange != expectedChange)
         {
-            Debug.LogWarning("[경고] 거스름돈 금액이 틀렸습니다!");
+            //Debug.LogWarning("[경고] 거스름돈 금액이 틀렸습니다!");
             hasMistake = true;
         }
         if (hasMistake && MistakeManager.Instance != null)
@@ -219,7 +219,7 @@ public class CheckoutCounter : MonoBehaviour
             {
                 POSSystem.Instance.walletMoney += totalProfit;
                 POSSystem.Instance.UpdateWalletUI();
-                Debug.Log($"[계산대 - 현금결제] 총 이득 {totalProfit}원을 지갑에 추가! (가짜돈: {fakeMoneyProfit}원, 사기이득: {fraudProfit}원 [중복스캔+가짜라벨])");
+                Debug.Log($"💰 [계산 완료] 총 {itemManager.GetTotalAmount()}원 결제 → 지갑에 {totalProfit}원 추가! (가짜돈: {fakeMoneyProfit}원, 사기이득: {fraudProfit}원 [중복스캔+가짜라벨])");
             }
         }
 
@@ -230,11 +230,11 @@ public class CheckoutCounter : MonoBehaviour
     {
         if (itemManager.GetScannedItemCount() == 0)
         {
-            Debug.LogWarning("[계산대] 스캔한 상품이 없습니다!");
+            //Debug.LogWarning("[계산대] 스캔한 상품이 없습니다!");
             return;
         }
 
-        Debug.Log($"[계산대] 계산 처리 중... 총 {itemManager.GetScannedItemCount()}개 상품, {itemManager.GetTotalAmount()}원");
+        //Debug.Log($"[계산대] 계산 처리 중... 총 {itemManager.GetScannedItemCount()}개 상품, {itemManager.GetTotalAmount()}원");
 
         // ✅ ProductType + BrandGrade 기반으로 검증 (isFake 무시)
         bool hasWrongProduct = false;
@@ -273,9 +273,9 @@ public class CheckoutCounter : MonoBehaviour
             }
 
             // 검증: 각 타입/등급별로 개수가 맞는지 확인
-            Debug.Log("═══════════════════════════════════");
-            Debug.Log("[계산 검증] ProductType + BrandGrade 기반 검증 시작");
-            Debug.Log("───────────────────────────────────");
+            //Debug.Log("═══════════════════════════════════");
+            //Debug.Log("[계산 검증] ProductType + BrandGrade 기반 검증 시작");
+            //Debug.Log("───────────────────────────────────");
 
             foreach (var wanted in wantedProducts)
             {
@@ -283,12 +283,12 @@ public class CheckoutCounter : MonoBehaviour
                 int wantedCount = wanted.Value;
                 int scannedCount = scannedProducts.ContainsKey(typeGrade) ? scannedProducts[typeGrade] : 0;
 
-                Debug.Log($"  • {typeGrade}: 필요 {wantedCount}개, 스캔 {scannedCount}개");
+                //Debug.Log($"  • {typeGrade}: 필요 {wantedCount}개, 스캔 {scannedCount}개");
 
                 if (scannedCount < wantedCount)
                 {
                     hasWrongProduct = true;
-                    Debug.LogWarning($"[검증 실패] {typeGrade} 부족! (필요: {wantedCount}, 스캔: {scannedCount})");
+                    //Debug.LogWarning($"[검증 실패] {typeGrade} 부족! (필요: {wantedCount}, 스캔: {scannedCount})");
                 }
             }
 
@@ -302,11 +302,11 @@ public class CheckoutCounter : MonoBehaviour
                 if (scannedCount > wantedCount)
                 {
                     hasWrongProduct = true;
-                    Debug.LogWarning($"[검증 실패] {typeGrade} 초과! (필요: {wantedCount}, 스캔: {scannedCount})");
+                    //Debug.LogWarning($"[검증 실패] {typeGrade} 초과! (필요: {wantedCount}, 스캔: {scannedCount})");
                 }
             }
 
-            Debug.Log("═══════════════════════════════════");
+            //Debug.Log("═══════════════════════════════════");
 
             // 잘못된 상품이 있으면 실수 카운트 1회
             if (hasWrongProduct && MistakeManager.Instance != null)
@@ -315,11 +315,11 @@ public class CheckoutCounter : MonoBehaviour
                     MistakeManager.MistakeType.WrongProductInCheckout,
                     "계산대에 잘못된 상품 포함"
                 );
-                Debug.LogWarning("[계산 검증] 잘못된 상품이 포함되어 실수 카운트 +1");
+                //Debug.LogWarning("[계산 검증] 잘못된 상품이 포함되어 실수 카운트 +1");
             }
             else
             {
-                Debug.Log("[계산 검증] ✅ 모든 상품이 정확합니다! (가짜 여부는 무시됨)");
+                //Debug.Log("[계산 검증] ✅ 모든 상품이 정확합니다! (가짜 여부는 무시됨)");
             }
         }
 
@@ -333,7 +333,7 @@ public class CheckoutCounter : MonoBehaviour
             POSSystem.Instance.walletMoney += fraudProfit;
             POSSystem.Instance.UpdateWalletUI();
 
-            Debug.Log($"[계산대 - 카드결제] 사기 이익 {fraudProfit}원을 바로 지갑에 추가! (원가: {totalOriginalPrice}원, 받은금액: {itemManager.GetTotalAmount()}원)");
+            Debug.Log($"💰 [계산 완료] 총 {itemManager.GetTotalAmount()}원 결제 → 지갑에 {fraudProfit}원 추가! (원가: {totalOriginalPrice}원, 사기이득: {fraudProfit}원 [중복스캔+가짜라벨])");
         }
 
         // 포스기 화면에 결제 완료 표시

@@ -102,7 +102,7 @@ public class Customer : MonoBehaviour
         }
         else
         {
-            checkoutTimeLimit = Random.Range(25f, 35f); // 일반 손님: 25~35초
+            checkoutTimeLimit = Random.Range(40f, 50f); // 일반 손님: 40~50초
             fraudToleranceMin = 0.2f; // 20%
             fraudToleranceMax = 0.3f; // 30%
         }
@@ -110,7 +110,7 @@ public class Customer : MonoBehaviour
         // 현재 손님의 사기 한계를 랜덤하게 설정
         currentFraudTolerance = Random.Range(fraudToleranceMin, fraudToleranceMax);
 
-        Debug.Log($"[손님] 타입: {customerType}, 시간제한: {checkoutTimeLimit:F1}초, 사기한계: {currentFraudTolerance:P0}");
+        //Debug.Log($"[손님] 타입: {customerType}, 시간제한: {checkoutTimeLimit:F1}초, 사기한계: {currentFraudTolerance:P0}");
 
         // 입장 애니메이션 시작
         StartCoroutine(EnterRoutine());
@@ -119,11 +119,11 @@ public class Customer : MonoBehaviour
     IEnumerator EnterRoutine()
     {
         // 스폰 위치에서 입장 위치로 이동
-        Debug.Log("[손님] 입장 중...");
+        //Debug.Log("[손님] 입장 중...");
         yield return StartCoroutine(MoveToPosition(enterPos, 2f));
-        Debug.Log("[손님] 입장 완료!");
+        //Debug.Log("[손님] 입장 완료!");
 
-        MistakeManager.Instance?.ClearText();   
+        MistakeManager.Instance?.ClearText();
 
 
         // 타입에 따라 스프라이트 설정 (CustomerManager에서 이미 설정됨)
@@ -132,7 +132,7 @@ public class Customer : MonoBehaviour
 
     IEnumerator ShoppingRoutine()
     {
-        Debug.Log($"[손님] 입장! 타입: {customerType}");
+        //Debug.Log($"[손님] 입장! 타입: {customerType}");
 
         // 쇼핑 시간 대기 (1초로 단축)
         yield return new WaitForSeconds(1f);
@@ -144,7 +144,7 @@ public class Customer : MonoBehaviour
         PrintShoppingList();
 
         // 계산대 도착 (이동 없이 바로 처리)
-        Debug.Log($"[손님] 계산대 대기! 선택한 상품: {selectedProducts.Count}개");
+        //Debug.Log($"[손님] 계산대 대기! 선택한 상품: {selectedProducts.Count}개");
         readyForCheckout = true;
         isWaiting = false;
 
@@ -152,7 +152,7 @@ public class Customer : MonoBehaviour
         if (CheckoutCounter.Instance != null)
         {
             CheckoutCounter.Instance.OnCustomerArrived(this);
-            Debug.Log("[손님] 계산대 대기 중 - 진열대에서 상품을 찾아 스캐너로 드래그하세요!");
+            //Debug.Log("[손님] 계산대 대기 중 - 진열대에서 상품을 찾아 스캐너로 드래그하세요!");
         }
 
         // 시간 제한 타이머 시작
@@ -254,7 +254,7 @@ public class Customer : MonoBehaviour
         float overchargeRatio = (float)(scannedTotal - actualTotal) / actualTotal;
         int overchargeAmount = scannedTotal - actualTotal;
 
-        Debug.Log($"[손님] 과금 체크 - 실제: {actualTotal}원, 스캔: {scannedTotal}원, 비율: {overchargeRatio:P1}, 한계: {currentFraudTolerance:P0}");
+        //Debug.Log($"[손님] 과금 체크 - 실제: {actualTotal}원, 스캔: {scannedTotal}원, 비율: {overchargeRatio:P1}, 한계: {currentFraudTolerance:P0}");
 
         // 사기 한계 초과 시
         if (overchargeRatio > currentFraudTolerance)
@@ -278,7 +278,7 @@ public class Customer : MonoBehaviour
         // 수상함 감지 → 시간 제한 감소
         remainingTime -= suspicionTimePenalty;
 
-        Debug.Log($"[손님] 👀 수상한 행동 감지! ({behaviorType}) - 시간 제한 {suspicionTimePenalty}초 감소 (남은시간: {remainingTime:F1}초)");
+        //Debug.Log($"[손님] 👀 수상한 행동 감지! ({behaviorType}) - 시간 제한 {suspicionTimePenalty}초 감소 (남은시간: {remainingTime:F1}초)");
 
         // 시간 게이지 업데이트
         if (timeGaugeImage != null && checkoutTimeLimit > 0)
@@ -320,7 +320,7 @@ public class Customer : MonoBehaviour
         }
 
         // 퇴장 애니메이션 시작 (화났을 때도 걸어서 나감)
-        Debug.Log("[손님] 화나서 퇴장!");
+        //Debug.Log("[손님] 화나서 퇴장!");
         StartCoroutine(ExitRoutineAngry());
     }
 
@@ -330,9 +330,9 @@ public class Customer : MonoBehaviour
     IEnumerator ExitRoutineAngry()
     {
         // 스폰 위치로 이동
-        Debug.Log("[손님] 퇴장 중...");
+        //Debug.Log("[손님] 퇴장 중...");
         yield return StartCoroutine(MoveToPosition(spawnPos, 2f));
-        Debug.Log("[손님] 퇴장 완료!");
+        //Debug.Log("[손님] 퇴장 완료!");
 
         // 계산대 정리 요청
         if (CheckoutCounter.Instance != null)
@@ -363,7 +363,7 @@ public class Customer : MonoBehaviour
             if (manager.angryDrunkSprite != null)
             {
                 customerImage.sprite = manager.angryDrunkSprite;
-                Debug.Log("[손님] 화난 취객 스프라이트로 변경!");
+                //Debug.Log("[손님] 화난 취객 스프라이트로 변경!");
             }
         }
         else // Normal 또는 OnPhone
@@ -371,7 +371,7 @@ public class Customer : MonoBehaviour
             if (manager.angryNormalSprite != null)
             {
                 customerImage.sprite = manager.angryNormalSprite;
-                Debug.Log("[손님] 화난 일반 손님 스프라이트로 변경!");
+                //Debug.Log("[손님] 화난 일반 손님 스프라이트로 변경!");
             }
         }
     }
@@ -393,7 +393,7 @@ public class Customer : MonoBehaviour
             // 가짜 제품은 무조건 제외
             if (product.productData.isFake)
             {
-                Debug.Log($"[손님] {product.productData.productName}은 가짜 제품이므로 선택하지 않음");
+                //Debug.Log($"[손님] {product.productData.productName}은 가짜 제품이므로 선택하지 않음");
                 continue;
             }
 
@@ -401,7 +401,7 @@ public class Customer : MonoBehaviour
             if (isDebugMode)
             {
                 validProducts.Add(product);
-                Debug.Log($"[손님] 🔧 디버그: {product.productData.productName} 자동 선택!");
+                //Debug.Log($"[손님] 🔧 디버그: {product.productData.productName} 자동 선택!");
                 continue;
             }
 
@@ -416,18 +416,18 @@ public class Customer : MonoBehaviour
             if (Random.value <= purchaseProbability)
             {
                 validProducts.Add(product);
-                Debug.Log($"[손님] {product.productData.productName} 구매 후보! (원가: {originalPrice}원, 현재: {currentPrice}원, 확률: {purchaseProbability:P0})");
+                //Debug.Log($"[손님] {product.productData.productName} 구매 후보! (원가: {originalPrice}원, 현재: {currentPrice}원, 확률: {purchaseProbability:P0})");
             }
             else
             {
-                Debug.Log($"[손님] {product.productData.productName} 패스 (가격이 {currentPrice - originalPrice}원 비쌈, 확률: {purchaseProbability:P0})");
+                //Debug.Log($"[손님] {product.productData.productName} 패스 (가격이 {currentPrice - originalPrice}원 비쌈, 확률: {purchaseProbability:P0})");
             }
         }
 
         // 구매할 상품이 없으면 종료
         if (validProducts.Count == 0)
         {
-            Debug.Log("[손님] 아무것도 안 샀어요... (가격이 다 비싸요!)");
+            //Debug.Log("[손님] 아무것도 안 샀어요... (가격이 다 비싸요!)");
             return;
         }
 
@@ -437,9 +437,9 @@ public class Customer : MonoBehaviour
             foreach (ProductInteractable product in validProducts)
             {
                 selectedProducts.Add(product);
-                Debug.Log($"[손님] 🔧 디버그: {product.productData.productName} x 1개 선택!");
+                //Debug.Log($"[손님] 🔧 디버그: {product.productData.productName} x 1개 선택!");
             }
-            Debug.Log($"[손님] 🔧 디버그 모드: 총 {validProducts.Count}종류, {selectedProducts.Count}개 상품 선택 완료!");
+            //Debug.Log($"[손님] 🔧 디버그 모드: 총 {validProducts.Count}종류, {selectedProducts.Count}개 상품 선택 완료!");
             return;
         }
 
@@ -483,10 +483,10 @@ public class Customer : MonoBehaviour
                 selectedProducts.Add(selectedProduct);
             }
 
-            Debug.Log($"[손님] {selectedProduct.productData.productName} x {quantity}개 선택!");
+            //Debug.Log($"[손님] {selectedProduct.productData.productName} x {quantity}개 선택!");
         }
 
-        Debug.Log($"[손님] 총 {selectedTypesCount}종류, {selectedProducts.Count}개 상품 선택 완료!");
+        //Debug.Log($"[손님] 총 {selectedTypesCount}종류, {selectedProducts.Count}개 상품 선택 완료!");
     }
 
     /// <summary>
