@@ -785,7 +785,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mistakeStackText: {fileID: 1493852725}
-  mistakeAllText: {fileID: 0}
+  mistakeAllText: {fileID: 168483922}
   gameOverPanel: {fileID: 1713590235}
   maxMistakes: 3
   currentMistakeStack: 0
