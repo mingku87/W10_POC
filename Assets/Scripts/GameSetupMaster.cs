@@ -1374,7 +1374,7 @@ public class GameSetupMaster : MonoBehaviour
         mistakeRect.anchoredPosition = new Vector2(0, -75); // 지갑 아래
         mistakeRect.sizeDelta = new Vector2(200, 40);
 
-        pos.mistakeStackText = mistakeText;
+        //pos.mistakeStackText = mistakeText;
 
         // 게임오버 패널 (최상위 레이어)
         GameObject gameOverCanvas = new GameObject("GameOverCanvas");
@@ -1414,7 +1414,7 @@ public class GameSetupMaster : MonoBehaviour
         gameOverTextRect.anchoredPosition = Vector2.zero;
         gameOverTextRect.sizeDelta = new Vector2(800, 300);
 
-        pos.gameOverPanel = gameOverPanel;
+        //pos.gameOverPanel = gameOverPanel;
 
         Debug.Log("7. POS System created (P키로 토글, 지갑 UI, 실수 스택, 게임오버 패널 추가)");
 #endif

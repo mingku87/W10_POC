@@ -303,9 +303,12 @@ public class Customer : MonoBehaviour
         ChangeToAngrySprite();
 
         // 실수 카운트 증가
-        if (POSSystem.Instance != null)
+        if (MistakeManager.Instance != null)
         {
-            POSSystem.Instance.AddMistake();
+            MistakeManager.Instance.AddMistake(
+                MistakeManager.MistakeType.CustomerTimeout,
+                reason
+            );
             Debug.Log($"[손님 퇴장 이유] {reason} - 실수 카운트 증가!");
         }
 

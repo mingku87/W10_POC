@@ -6,6 +6,7 @@ using System.Collections.Generic;
 /// <summary>
 /// POS 시스템 - 구매 내역, 환불, 매출 확인
 /// ✅ Unity 6.0 호환 - 가짜 제품 탐지 제거 (손님이 못 알아채게 함)
+/// ✅ MistakeManager로 실수 관리 기능 분리
 /// </summary>
 public class POSSystem : MonoBehaviour
 {
@@ -19,17 +20,12 @@ public class POSSystem : MonoBehaviour
     public Button clearButton; // 내역 초기화
     public Button toggleButton; // POS 토글 버튼
     public TextMeshProUGUI walletText; // 지갑 UI
-    public TextMeshProUGUI mistakeStackText; // 실수 스택 UI
 
     [Header("Stats")]
     public int totalSales = 0;
     public int totalProfit = 0;
     public int transactionCount = 0;
     public int walletMoney = 0; // 지갑 돈
-    public int mistakeStack = 0; // 실수 스택 (0~3)
-
-    [Header("Game Over")]
-    public GameObject gameOverPanel; // 게임오버 패널
 
     private List<GameObject> transactionItems = new List<GameObject>();
     private Dictionary<int, ItemRefundData> itemRefundDataMap = new Dictionary<int, ItemRefundData>(); // 상품별 환불 데이터
@@ -89,48 +85,11 @@ public class POSSystem : MonoBehaviour
 
         UpdateUI();
         posPanel.SetActive(false); // 처음엔 숨김
-
-        if (gameOverPanel != null)
-            gameOverPanel.SetActive(false); // 게임오버 패널 숨김
     }
 
     public void TogglePOS()
     {
         posPanel.SetActive(!posPanel.activeSelf);
-    }
-
-    public void AddMistake()
-    {
-        mistakeStack++;
-        UpdateMistakeUI();
-
-        Debug.Log($"[POS] 실수 스택 증가! ({mistakeStack}/3)");
-
-        if (mistakeStack >= 3)
-        {
-            GameOver();
-        }
-    }
-
-    void UpdateMistakeUI()
-    {
-        if (mistakeStackText != null)
-        {
-            mistakeStackText.text = $"실수: {mistakeStack}/3";
-        }
-    }
-
-    void GameOver()
-    {
-        Debug.Log("[POS] 게임 오버!");
-
-        if (gameOverPanel != null)
-        {
-            gameOverPanel.SetActive(true);
-        }
-
-        // 게임 일시정지
-        Time.timeScale = 0f;
     }
 
     public void AddTransaction(List<ProductInteractable> products)

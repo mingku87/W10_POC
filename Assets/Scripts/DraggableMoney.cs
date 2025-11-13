@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -263,9 +263,12 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
                         {
                             Debug.LogWarning("[경고] 손님이 가짜 돈을 발견했습니다!");
 
-                            if (POSSystem.Instance != null)
+                            if (MistakeManager.Instance != null)
                             {
-                                POSSystem.Instance.AddMistake();
+                                MistakeManager.Instance.AddMistake(
+                                    MistakeManager.MistakeType.FakeMoneyDetected,
+                                    "손님이 가짜 돈 발견"
+                                );
                             }
                         }
                     }

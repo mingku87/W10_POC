@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
@@ -89,9 +89,12 @@ public class ProductDetailPanel : MonoBehaviour
             {
                 Debug.LogWarning("[경고] CCTV가 지켜보고 있을 때 바코드를 교체했습니다!");
 
-                if (POSSystem.Instance != null)
+                if (MistakeManager.Instance != null)
                 {
-                    POSSystem.Instance.AddMistake();
+                    MistakeManager.Instance.AddMistake(
+                        MistakeManager.MistakeType.BarcodeChangeCCTVDetected,
+                        "CCTV 감시 중 바코드 교체"
+                    );
                 }
             }
 

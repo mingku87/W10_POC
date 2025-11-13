@@ -14,7 +14,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
     public BrandData brandData;  // 이 커버가 적용할 브랜드 정보
 
     [Header("변경 설정")]
-    public float hoverDelay = 0.1f;  // 호버 시 브랜드 변경까지의 대기 시간
+    private float hoverDelay = 0.02f;  // 호버 시 브랜드 변경까지의 대기 시간
 
     [Header("드래그 설정")]
     public bool isDraggable = true;  // 드래그 가능 여부
@@ -302,9 +302,12 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
                 Debug.Log($"[브랜드 커버] ⚠️ 손님이 보고 있음! 실수 카운트 증가!");
 
                 // POSSystem의 실수 카운트 증가
-                if (POSSystem.Instance != null)
+                if (MistakeManager.Instance != null)
                 {
-                    POSSystem.Instance.AddMistake();
+                    MistakeManager.Instance.AddMistake(
+                        MistakeManager.MistakeType.BrandChangeDetected,
+                        "손님이 브랜드 변경 목격"
+                    );
                 }
             }
         }

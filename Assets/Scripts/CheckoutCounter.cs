@@ -194,10 +194,12 @@ public class CheckoutCounter : MonoBehaviour
             Debug.LogWarning("[경고] 거스름돈 금액이 틀렸습니다!");
             hasMistake = true;
         }
-
-        if (hasMistake && POSSystem.Instance != null)
+        if (hasMistake && MistakeManager.Instance != null)
         {
-            POSSystem.Instance.AddMistake();
+            MistakeManager.Instance.AddMistake(
+                MistakeManager.MistakeType.ChangeAmountMistake,
+                $"거스름돈 오류: 예상 {totalGivenChange}원"
+            );
         }
 
         // 현금 결제 총 이득 계산 및 지갑에 추가 (실수 여부와 관계없이 이득은 챙김)
@@ -307,9 +309,12 @@ public class CheckoutCounter : MonoBehaviour
             Debug.Log("═══════════════════════════════════");
 
             // 잘못된 상품이 있으면 실수 카운트 1회
-            if (hasWrongProduct && POSSystem.Instance != null)
+            if (hasWrongProduct && MistakeManager.Instance != null)
             {
-                POSSystem.Instance.AddMistake();
+                MistakeManager.Instance.AddMistake(
+                    MistakeManager.MistakeType.WrongProductInCheckout,
+                    "계산대에 잘못된 상품 포함"
+                );
                 Debug.LogWarning("[계산 검증] 잘못된 상품이 포함되어 실수 카운트 +1");
             }
             else
