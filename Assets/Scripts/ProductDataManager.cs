@@ -261,4 +261,41 @@ public class ProductDataManager : MonoBehaviour
         return clone;
     }
 
+    /// <summary>
+    /// 제품의 실제 원가를 계산
+    /// - 진짜 제품: originalPrice 그대로 반환
+    /// - 가짜 제품: originalBrand와 currentBrand를 비교하여 실제 원가 계산
+    /// </summary>
+    public int CalculateRealCost(ProductData product)
+    {
+        if (product == null)
+        {
+            Debug.LogError("[ProductDataManager] CalculateRealCost: product가 null입니다!");
+            return 0;
+        }
+
+        // 진짜 제품인 경우 originalPrice 그대로 반환
+        if (!product.isFake)
+        {
+            return product.originalPrice;
+        }
+
+        // 가짜 제품인 경우 실제 원가 계산
+        // originalBrand가 Low면 배율 1.0, High면 1.5
+        float originalMultiplier = product.originalBrand == BrandGrade.Low ? 1.0f : 1.5f;
+        float currentMultiplier = product.currentBrand == BrandGrade.Low ? 1.0f : 1.5f;
+
+        // 실제 원가 = 현재 originalPrice / 현재 배율 * 원래 배율
+        int realCost = Mathf.RoundToInt(product.originalPrice / currentMultiplier * originalMultiplier);
+
+        Debug.Log($"[ProductDataManager] 실제 원가 계산: {product.productName}");
+        Debug.Log($"  - Product Type: {product.productType}");
+        Debug.Log($"  - 원래 브랜드: {product.originalBrand} (배율 {originalMultiplier})");
+        Debug.Log($"  - 현재 브랜드: {product.currentBrand} (배율 {currentMultiplier})");
+        Debug.Log($"  - 표시된 originalPrice: {product.originalPrice}원");
+        Debug.Log($"  - 계산된 실제 원가: {realCost}원");
+
+        return realCost;
+    }
+
 }
