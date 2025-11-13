@@ -50,8 +50,53 @@ public class CheckoutItemManager : MonoBehaviour
         int total = 0;
         foreach (var product in scannedItems)
         {
-            total += product.productData.originalPrice;
+            int originalPrice = product.productData.originalPrice;
+
+            // 가짜 제품인 경우 실제 원가 계산
+            if (product.productData.isFake)
+            {
+                // 원래 브랜드의 배율로 실제 원가 계산
+                float originalMultiplier = product.productData.originalBrand == BrandGrade.Low ? 1.0f : 1.5f;
+                float currentMultiplier = product.productData.currentBrand == BrandGrade.Low ? 1.0f : 1.5f;
+
+                // 실제 하급 원가 = 현재 originalPrice / 현재 배율 * 원래 배율
+                originalPrice = Mathf.RoundToInt(product.productData.originalPrice / currentMultiplier * originalMultiplier);
+
+                Debug.Log($"[ItemManager] 가짜 제품 원가 계산: {product.productData.productName}");
+                Debug.Log($"  - 가짜 originalPrice: {product.productData.originalPrice}원");
+                Debug.Log($"  - 실제 원가: {originalPrice}원");
+            }
+
+            total += originalPrice;
         }
         return total;
+    }
+
+    /// <summary>
+    /// 가짜 라벨로 인한 이익 계산
+    /// (가짜 상품의 스캔 가격 - 원래 가격)
+    /// </summary>
+    public int GetFakeLabelProfit()
+    {
+        int profit = 0;
+        foreach (var product in scannedItems)
+        {
+            // 가짜 상품만 계산
+            if (product.productData.isFake)
+            {
+                // 가짜로 받은 가격 (상급 가격)
+                int fakePrice = product.GetCurrentPrice();
+
+                // 원래 가격 (하급 원가)
+                int realPrice = product.productData.originalPrice;
+
+                // 차액
+                int itemProfit = fakePrice - realPrice;
+                profit += itemProfit;
+
+                Debug.Log($"[가짜 라벨 이익] {product.productData.productName}: {fakePrice}원 - {realPrice}원 = {itemProfit}원");
+            }
+        }
+        return profit;
     }
 }

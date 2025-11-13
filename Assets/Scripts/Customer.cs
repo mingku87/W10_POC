@@ -131,8 +131,8 @@ public class Customer : MonoBehaviour
     {
         Debug.Log($"[손님] 입장! 타입: {customerType}");
 
-        // 쇼핑 시간 대기
-        yield return new WaitForSeconds(shoppingTime);
+        // 쇼핑 시간 대기 (1초로 단축)
+        yield return new WaitForSeconds(1f);
 
         // 모든 상품을 확인하고 구매 결정
         SelectProducts();
@@ -195,7 +195,6 @@ public class Customer : MonoBehaviour
                     customerImage.sprite = manager.onPhoneSprite;
                 }
 
-                Debug.Log("[손님] 휴대폰 보는 중... (스캔 감지 안됨)");
 
                 // 3~6초간 휴대폰 봄
                 yield return new WaitForSeconds(Random.Range(3f, 6f));
@@ -209,7 +208,6 @@ public class Customer : MonoBehaviour
                     customerImage.sprite = manager.normalSprite;
                 }
 
-                Debug.Log("[손님] 휴대폰 그만 봄 (다시 정상)");
             }
         }
     }
@@ -453,11 +451,26 @@ public class Customer : MonoBehaviour
             shuffledProducts[randomIndex] = temp;
         }
 
-        // 선택된 종류의 상품들을 1~5개씩 추가
+        // 선택된 종류의 상품들을 1~3개씩 추가 (확률: 1개 50%, 2개 35%, 3개 15%)
         for (int i = 0; i < selectedTypesCount; i++)
         {
             ProductInteractable selectedProduct = shuffledProducts[i];
-            int quantity = Random.Range(1, 6); // 1~5개
+
+            // 개수 결정 (1~3개, 적은 수를 더 높은 확률로)
+            float randomValue = Random.value;
+            int quantity;
+            if (randomValue < 0.5f)
+            {
+                quantity = 1; // 50% 확률
+            }
+            else if (randomValue < 0.85f)
+            {
+                quantity = 2; // 35% 확률
+            }
+            else
+            {
+                quantity = 3; // 15% 확률
+            }
 
             for (int j = 0; j < quantity; j++)
             {
@@ -583,8 +596,6 @@ public class Customer : MonoBehaviour
         // 타이머 중지
         isTimerActive = false;
 
-        Debug.Log("[손님] 퇴장합니다");
-
         // 퇴장 애니메이션 시작 (HideUI는 코루틴 안에서 호출)
         StartCoroutine(ExitRoutine());
     }
@@ -592,9 +603,7 @@ public class Customer : MonoBehaviour
     IEnumerator ExitRoutine()
     {
         // 스폰 위치로 이동
-        Debug.Log("[손님] 퇴장 중...");
         yield return StartCoroutine(MoveToPosition(spawnPos, 2f));
-        Debug.Log("[손님] 퇴장 완료!");
 
         // UI 숨기기는 삭제 직전에 (이동 완료 후)
         if (CustomerUI.Instance != null)

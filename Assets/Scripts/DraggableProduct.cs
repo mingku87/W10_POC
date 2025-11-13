@@ -220,8 +220,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
 
             // 스캔 존을 벗어나면 isCurrentlyScanned 리셋 (다시 스캔 가능하도록)
             isCurrentlyScanned = false;
-
-            Debug.Log($"[상품] 스캔 존 이탈: {productInteractable.productData.productName} (hasBeenScanned: {hasBeenScanned}, isCurrentlyScanned 리셋)");
         }
     }
 
@@ -259,8 +257,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
 
             // 타이머 리셋
             scanTimer = 0f;
-
-            Debug.Log($"[상품] 스캔 완료! 계속 드래그 가능");
         }
     }
 
@@ -293,7 +289,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         Debug.Log($"[상품] Raycast 결과 개수: {results.Count}");
         foreach (var result in results)
         {
-            Debug.Log($"[상품] Raycast Hit: {result.gameObject.name}");
 
             // ✅ BrandChangeZone 체크
             if (!hasBeenScanned) // 스캔 전 상품만 BrandChangeZone 사용 가능
@@ -302,57 +297,37 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 if (brandChangeZone != null)
                 {
                     validDropTargetFound = true;
-                    Debug.Log($"[상품] BrandChangeZone에 드롭됨! {productInteractable.productData.productName}");
                     // BrandChangeZone의 OnDrop이 처리하므로 여기서는 return
                     return;
                 }
             }
 
             // 스캔 후이고, 손님 존을 찾았을 때 (한번이라도 스캔됐으면 배치 가능)
-            Debug.Log($"[상품] CustomerZone 탐색 중... hasBeenScanned={hasBeenScanned}");
             if (hasBeenScanned)
             {
                 // 현재 오브젝트에서 CustomerZone 찾기
                 endZone = result.gameObject.GetComponent<CustomerZone>();
-                if (endZone != null)
-                {
-                    Debug.Log($"[상품] CustomerZone 발견 (직접)! {endZone.gameObject.name}");
-                }
 
                 // 현재 오브젝트에 없으면 부모에서 찾기
                 if (endZone == null)
                 {
                     endZone = result.gameObject.GetComponentInParent<CustomerZone>();
-                    if (endZone != null)
-                    {
-                        Debug.Log($"[상품] CustomerZone 발견 (부모)! {endZone.gameObject.name}");
-                    }
                 }
 
                 // 부모에도 없으면 자식에서 찾기
                 if (endZone == null)
                 {
                     endZone = result.gameObject.GetComponentInChildren<CustomerZone>();
-                    if (endZone != null)
-                    {
-                        Debug.Log($"[상품] CustomerZone 발견 (자식)! {endZone.gameObject.name}");
-                    }
                 }
 
                 if (endZone != null)
                 {
                     validDropTargetFound = true;
-                    Debug.Log($"[상품] ✅ CustomerZone 최종 발견! {endZone.gameObject.name}");
                     break;
                 }
             }
-            else
-            {
-                Debug.Log($"[상품] 스캔되지 않아서 CustomerZone 탐색 스킵");
-            }
         }
 
-        Debug.Log($"[상품] 탐색 완료 - validDropTargetFound: {validDropTargetFound}, endZone: {(endZone != null ? endZone.gameObject.name : "null")}");
 
         // 2. 시작 존에서 제거 처리
         if (startZone != null && endZone != startZone)
@@ -365,7 +340,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
         {
             if (endZone != null)
             {
-                Debug.Log($"[상품] 손님 존에 배치 시도! {productInteractable.productData.productName}");
                 // CustomerZone.OnDrop이 이미 호출되었을 것이므로 여기서는 추가 처리 불필요
                 // 만약 OnDrop이 호출되지 않았다면 직접 호출
                 endZone.OnDrop(eventData);
@@ -386,7 +360,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             {
                 transform.SetParent(lastParent);
                 rectTransform.anchoredPosition = lastValidPosition;
-                Debug.Log($"[상품] 스캔 존으로 복귀");
             }
         }
     }

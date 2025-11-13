@@ -104,7 +104,6 @@ public class CustomerManager : MonoBehaviour
         if (bellObject != null)
         {
             bellObject.SetActive(true);
-            Debug.Log("[매니저] 띵동~ 손님이 곧 입장합니다!");
             yield return new WaitForSeconds(1f);
             bellObject.SetActive(false);
         }
@@ -203,7 +202,6 @@ public class CustomerManager : MonoBehaviour
 
             waitingCustomers.Add(customer);
 
-            Debug.Log($"[매니저] 손님 입장! 타입: {customer.customerType} (대기 중인 손님: {waitingCustomers.Count}명)");
         }
     }
 
@@ -214,7 +212,6 @@ public class CustomerManager : MonoBehaviour
         {
             currentCheckoutCustomer = customer;
             isCustomerAtCheckout = true; // 계산대 차지
-            Debug.Log("[매니저] 손님이 계산 대기 중 - 스캐너로 스캔 → C키로 계산");
         }
     }
 
