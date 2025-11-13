@@ -10,6 +10,7 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     public int moneyAmount = 1000; // 돈 금액
     public bool isFakeMoney = false; // 가짜 돈 여부
     public bool isClone = false; // 복사본인지 여부
+    public bool isPlacedInDropZone = false; // 거스름돈 창구에 이미 배치되었는지
 
     private Canvas canvas;
     private RectTransform rectTransform;
@@ -17,6 +18,7 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     private Vector2 originalPosition;
     private Transform originalParent;
     private GameObject dragClone; // 드래그 중인 복사본
+    private ChangeMoneyDropZone currentDropZone; // 현재 속한 드랍존
 
     void Awake()
     {
@@ -66,6 +68,15 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        // 이미 배치된 거스름돈을 다시 드래그하는 경우
+        if (isPlacedInDropZone && currentDropZone != null)
+        {
+            Debug.Log($"[거스름돈 제거 시작] {moneyAmount}원을 드래그하여 제거합니다.");
+            canvasGroup.alpha = 0.6f;
+            canvasGroup.blocksRaycasts = false;
+            return;
+        }
+
         // 원본은 그대로 두고 복사본 생성
         if (!isClone)
         {
@@ -157,18 +168,55 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
     public void OnDrag(PointerEventData eventData)
     {
-        // 복사본만 드래그됨
-        if (isClone && rectTransform != null && canvas != null)
+        // 배치된 거스름돈을 드래그 중이거나 복사본을 드래그 중
+        if ((isPlacedInDropZone || isClone) && rectTransform != null && canvas != null)
         {
             rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
-
-            // 매 프레임 로그는 너무 많으니 생략
-            // Debug.Log($"[드래그 중] 위치: {rectTransform.position}");
         }
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        // 배치된 거스름돈을 드래그해서 밖으로 빼는 경우
+        if (isPlacedInDropZone)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.blocksRaycasts = true;
+
+            // Raycast로 여전히 ChangeMoneyDropZone 위에 있는지 확인
+            var raycastResults = new System.Collections.Generic.List<RaycastResult>();
+            EventSystem.current.RaycastAll(eventData, raycastResults);
+
+            bool stillInDropZone = false;
+            foreach (var result in raycastResults)
+            {
+                if (result.gameObject.GetComponent<ChangeMoneyDropZone>() != null)
+                {
+                    stillInDropZone = true;
+                    break;
+                }
+            }
+
+            // 드랍존 밖으로 나갔으면 삭제하고 금액 차감
+            if (!stillInDropZone)
+            {
+                Debug.Log($"[거스름돈 제거] {moneyAmount}원을 드랍존 밖으로 드래그 - 삭제 및 금액 차감");
+
+                if (currentDropZone != null)
+                {
+                    currentDropZone.RemoveMoney(this);
+                }
+
+                Destroy(gameObject);
+                return;
+            }
+            else
+            {
+                Debug.Log($"[거스름돈] 여전히 드랍존 안에 있음 - 유지");
+                return;
+            }
+        }
+
         // 복사본이 아니면 아무것도 안함 (원본은 움직이지 않음)
         if (!isClone)
         {
@@ -225,6 +273,10 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
                 // 거스름돈 드랍 성공
                 dropZone.OnMoneyDropped(this);
+
+                // 드랍존 참조 저장 (나중에 제거할 때 사용)
+                currentDropZone = dropZone;
+                isPlacedInDropZone = true;
 
                 // FIX: ChangeMoneyDropZone 자식으로 이동 (ChangeDropCanvas 안으로)
                 transform.SetParent(dropZone.transform);

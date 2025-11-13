@@ -414,19 +414,15 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
                 }
             }
 
-            // 잘못된 상품 스캔
+            // 잘못된 상품 스캔 (경고만 표시, 실수 카운트는 계산 완료 시 체크)
             if (!isWantedProduct)
             {
                 Debug.LogWarning($"[경고] 손님이 원하지 않는 상품! (스캔: {productInteractable.productData.productName})");
 
-                if (POSSystem.Instance != null)
-                {
-                    POSSystem.Instance.AddMistake();
-                }
-
+                // 스캔 자체는 허용 (계산 완료 시 검증)
                 // 스캔 실패 - 복사본 삭제
                 // Destroy(gameObject);
-                return;
+                // return;
             }
 
             // 중복 스캔 체크

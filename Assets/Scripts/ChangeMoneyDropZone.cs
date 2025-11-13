@@ -47,6 +47,32 @@ public class ChangeMoneyDropZone : MonoBehaviour, IDropHandler
         UpdateDisplay();
     }
 
+    /// <summary>
+    /// 거스름돈을 드래그해서 제거할 때 호출
+    /// </summary>
+    public void RemoveMoney(DraggableMoney money)
+    {
+        if (droppedMoneys.Contains(money))
+        {
+            totalChangeMoney -= money.moneyAmount;
+
+            // 진짜/가짜 구분
+            if (money.isFakeMoney)
+            {
+                totalFakeMoney -= money.moneyAmount;
+            }
+            else
+            {
+                totalRealMoney -= money.moneyAmount;
+            }
+
+            droppedMoneys.Remove(money);
+
+            Debug.Log($"[거스름돈 제거] {money.moneyAmount}원 제거됨 (남은 총액: {totalChangeMoney}원, 진짜: {totalRealMoney}원, 가짜: {totalFakeMoney}원)");
+            UpdateDisplay();
+        }
+    }
+
     // 계산 완료 시 호출 - 모든 거스름돈 제거
     public void ClearAllMoney()
     {

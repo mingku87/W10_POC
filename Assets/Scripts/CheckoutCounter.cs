@@ -201,8 +201,8 @@ public class CheckoutCounter : MonoBehaviour
             POSSystem.Instance.AddMistake();
         }
 
-        // 현금 결제 총 이득 계산 및 지갑에 추가
-        if (!hasMistake && POSSystem.Instance != null)
+        // 현금 결제 총 이득 계산 및 지갑에 추가 (실수 여부와 관계없이 이득은 챙김)
+        if (POSSystem.Instance != null)
         {
             // 1. 가짜 돈 이득 (거스름돈으로 가짜 돈 준 금액)
             int fakeMoneyProfit = fakeMoney;
@@ -234,6 +234,40 @@ public class CheckoutCounter : MonoBehaviour
         }
 
         Debug.Log($"[계산대] 계산 처리 중... 총 {itemManager.GetScannedItemCount()}개 상품, {itemManager.GetTotalAmount()}원");
+
+        // 손님이 원하는 상품 목록과 비교하여 검증
+        bool hasWrongProduct = false;
+        if (currentCustomer != null)
+        {
+            List<ProductInteractable> scannedItems = itemManager.GetScannedItems();
+
+            foreach (var scannedItem in scannedItems)
+            {
+                bool isWanted = false;
+                foreach (var wantedProduct in currentCustomer.selectedProducts)
+                {
+                    if (wantedProduct.productData.productName == scannedItem.productData.productName)
+                    {
+                        isWanted = true;
+                        break;
+                    }
+                }
+
+                if (!isWanted)
+                {
+                    hasWrongProduct = true;
+                    Debug.LogWarning($"[계산 검증] 손님이 원하지 않는 상품 발견: {scannedItem.productData.productName}");
+                    break;
+                }
+            }
+
+            // 잘못된 상품이 있으면 실수 카운트 1회
+            if (hasWrongProduct && POSSystem.Instance != null)
+            {
+                POSSystem.Instance.AddMistake();
+                Debug.LogWarning("[계산 검증] 잘못된 상품이 포함되어 실수 카운트 +1");
+            }
+        }
 
         // 카드 결제인 경우만 여기서 이익 추가 (현금 결제는 ValidateChangeAndComplete에서 이미 처리됨)
         if (isCardPayment && POSSystem.Instance != null)
@@ -400,6 +434,9 @@ public class CheckoutCounter : MonoBehaviour
     public void OnCustomerLeftAngry()
     {
         Debug.Log("[계산대] 손님이 화나서 나갔습니다! 계산대를 정리합니다.");
+
+        // 손님 존의 상품들 정리
+        ClearCustomerZone();
 
         // 계산대 정리
         ClearCounter();

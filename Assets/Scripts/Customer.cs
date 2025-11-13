@@ -364,10 +364,14 @@ public class Customer : MonoBehaviour
 
     /// <summary>
     /// 상품 선택 로직 - 가짜 제품(isFake=true)은 선택하지 않음
+    /// 최대 3종류의 상품만 선택하고, 각 종류당 1~5개까지 주문
     /// </summary>
     void SelectProducts()
     {
         ProductInteractable[] allProducts = FindObjectsByType<ProductInteractable>(FindObjectsSortMode.None);
+
+        // 가짜 제품 제외한 실제 상품만 필터링
+        List<ProductInteractable> validProducts = new List<ProductInteractable>();
 
         foreach (ProductInteractable product in allProducts)
         {
@@ -387,8 +391,8 @@ public class Customer : MonoBehaviour
             // 확률에 따라 구매 결정
             if (Random.value <= purchaseProbability)
             {
-                selectedProducts.Add(product);
-                Debug.Log($"[손님] {product.productData.productName} 선택! (원가: {originalPrice}원, 현재: {currentPrice}원, 확률: {purchaseProbability:P0})");
+                validProducts.Add(product);
+                Debug.Log($"[손님] {product.productData.productName} 구매 후보! (원가: {originalPrice}원, 현재: {currentPrice}원, 확률: {purchaseProbability:P0})");
             }
             else
             {
@@ -396,10 +400,42 @@ public class Customer : MonoBehaviour
             }
         }
 
-        if (selectedProducts.Count == 0)
+        // 구매할 상품이 없으면 종료
+        if (validProducts.Count == 0)
         {
             Debug.Log("[손님] 아무것도 안 샀어요... (가격이 다 비싸요!)");
+            return;
         }
+
+        // 최대 3종류까지만 선택
+        int maxProductTypes = Mathf.Min(3, validProducts.Count);
+        int selectedTypesCount = Random.Range(1, maxProductTypes + 1); // 1~3종류
+
+        // 랜덤하게 상품 종류 선택
+        List<ProductInteractable> shuffledProducts = new List<ProductInteractable>(validProducts);
+        for (int i = 0; i < shuffledProducts.Count; i++)
+        {
+            int randomIndex = Random.Range(i, shuffledProducts.Count);
+            var temp = shuffledProducts[i];
+            shuffledProducts[i] = shuffledProducts[randomIndex];
+            shuffledProducts[randomIndex] = temp;
+        }
+
+        // 선택된 종류의 상품들을 1~5개씩 추가
+        for (int i = 0; i < selectedTypesCount; i++)
+        {
+            ProductInteractable selectedProduct = shuffledProducts[i];
+            int quantity = Random.Range(1, 6); // 1~5개
+
+            for (int j = 0; j < quantity; j++)
+            {
+                selectedProducts.Add(selectedProduct);
+            }
+
+            Debug.Log($"[손님] {selectedProduct.productData.productName} x {quantity}개 선택!");
+        }
+
+        Debug.Log($"[손님] 총 {selectedTypesCount}종류, {selectedProducts.Count}개 상품 선택 완료!");
     }
 
     /// <summary>
