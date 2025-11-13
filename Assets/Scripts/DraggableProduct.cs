@@ -53,8 +53,9 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
 
     void Update()
     {
-        // 드래그 중이고, 스캔되지 않은 상태이며, 스캔 존 위에 있을 때만 타이머 증가
-        if (isDragging && !isScanned && isOverScanner)
+        // 드래그 중이고, 스캔 존 위에 있을 때 타이머 증가
+        // (스캔되지 않았거나, 스캔 존을 벗어났다가 다시 들어온 경우)
+        if (isDragging && isOverScanner && !isScanned)
         {
             scanTimer += Time.deltaTime;
 
@@ -171,8 +172,6 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
     /// </summary>
     void CheckIfOverScanner(PointerEventData eventData)
     {
-        if (isScanned) return; // 이미 스캔된 상품은 체크하지 않음
-
         var results = new System.Collections.Generic.List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
 
@@ -206,7 +205,25 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             // 스캔 존 이탈
             isOverScanner = false;
             scanTimer = 0f;
-            Debug.Log($"[상품] 스캔 존 이탈: {productInteractable.productData.productName}");
+
+            // 스캔 존을 벗어나면 스캔 상태를 리셋 (다시 스캔 가능하도록)
+            if (isScanned)
+            {
+                isScanned = false;
+
+                // 시각적 피드백 리셋
+                Image img = GetComponent<Image>();
+                if (img != null)
+                {
+                    img.color = Color.white; // 원래 색상으로 복원
+                }
+
+                Debug.Log($"[상품] 스캔 존 이탈 - 스캔 상태 리셋: {productInteractable.productData.productName}");
+            }
+            else
+            {
+                Debug.Log($"[상품] 스캔 존 이탈: {productInteractable.productData.productName}");
+            }
         }
     }
 

@@ -23,6 +23,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
     private CanvasGroup canvasGroup;
     private RectTransform rectTransform;
     private Vector2 originalPosition;
+    private Vector3 originalWorldPosition;  // 월드 좌표 저장
     private Transform originalParent;
     private LayoutElement layoutElement;  // Layout 제어용
 
@@ -60,8 +61,9 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
     void Start()
     {
-        // 초기 위치와 부모 저장
+        // 초기 위치와 부모 저장 (로컬 좌표와 월드 좌표 모두)
         originalPosition = rectTransform.anchoredPosition;
+        originalWorldPosition = rectTransform.position;  // 월드 좌표 저장
         originalParent = transform.parent;
     }
 
@@ -129,9 +131,9 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        // 원래 위치로 복귀
-        transform.SetParent(originalParent);
-        rectTransform.anchoredPosition = originalPosition;
+        // 원래 위치로 복귀 (월드 좌표 복원)
+        rectTransform.position = originalWorldPosition;  // 먼저 월드 좌표 설정
+        transform.SetParent(originalParent, true);  // 월드 좌표 유지하면서 부모 설정
 
         // LayoutElement가 있으면 재활성화 (HorizontalLayoutGroup 영향 복구)
         if (layoutElement != null)
@@ -275,8 +277,9 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         // 제품 데이터를 가짜 제품으로 교체
         hoveredProduct.productData = fakeProductData;
         hoveredProduct.InitializeAsNewProduct();  // UI 갱신
+        hoveredProduct.UpdateBrandUI();  // 바코드 가격 업데이트 (스캔 시 올바른 가격으로 찍히도록)
 
-        Debug.Log($"[브랜드 커버] 브랜드 변경 완료! {fakeProductData.productName} → {fakeProductData.currentBrand}등급 (가짜)");
+        Debug.Log($"[브랜드 커버] 브랜드 변경 완료! {fakeProductData.productName} → {fakeProductData.currentBrand}등급 (가짜), 새 가격: {hoveredProduct.GetCurrentPrice()}원");
 
         // 성공 효과
         if (BrandChangeZone.Instance != null)
@@ -292,8 +295,9 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        transform.SetParent(originalParent);
-        rectTransform.anchoredPosition = originalPosition;
+        // 원위치로 복귀 (월드 좌표 복원)
+        rectTransform.position = originalWorldPosition;  // 먼저 월드 좌표 설정
+        transform.SetParent(originalParent, true);  // 월드 좌표 유지하면서 부모 설정
 
         // LayoutElement가 있으면 재활성화
         if (layoutElement != null)
