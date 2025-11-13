@@ -135,8 +135,8 @@ public class POSSystem : MonoBehaviour
         {
             int current = product.GetCurrentPrice();
 
-            // ProductDataManager를 통해 실제 원가 계산
-            int original = ProductDataManager.Instance.CalculateRealCost(product.productData);
+            // BarcodeData에서 실제 원가 가져오기
+            int original = product.GetRealCost();
 
             int itemProfit = current - original;
 

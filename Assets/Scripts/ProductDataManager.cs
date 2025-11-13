@@ -261,47 +261,4 @@ public class ProductDataManager : MonoBehaviour
         return clone;
     }
 
-    /// <summary>
-    /// 제품의 실제 원가를 계산
-    /// - 진짜 제품: originalPrice 그대로 반환
-    /// - 가짜 제품: productList에서 동일한 ProductType이면서 originalBrand와 일치하는 진짜 제품의 가격 반환
-    /// </summary>
-    public int CalculateRealCost(ProductData product)
-    {
-        if (product == null)
-        {
-            Debug.LogError("[ProductDataManager] CalculateRealCost: product가 null입니다!");
-            return 0;
-        }
-
-        // 진짜 제품인 경우 originalPrice 그대로 반환
-        if (!product.isFake)
-        {
-            return product.originalPrice;
-        }
-
-        // 가짜 제품인 경우 실제 원가 계산
-        // productList에서 같은 ProductType이면서 originalBrand와 일치하는 진짜 제품 찾기
-        foreach (var realProduct in productList)
-        {
-            if (realProduct.productType == product.productType &&
-                realProduct.currentBrand == product.originalBrand &&
-                !realProduct.isFake)
-            {
-                Debug.Log($"[ProductDataManager] 실제 원가 계산: {product.productName}");
-                Debug.Log($"  - Product Type: {product.productType}");
-                Debug.Log($"  - 원래 브랜드: {product.originalBrand}");
-                Debug.Log($"  - 현재 브랜드: {product.currentBrand}");
-                Debug.Log($"  - 가짜 제품 표시 가격: {product.originalPrice}원");
-                Debug.Log($"  - 실제 원가 (진짜 {product.originalBrand} 제품 가격): {realProduct.originalPrice}원");
-
-                return realProduct.originalPrice;
-            }
-        }
-
-        // 못 찾은 경우 에러 로그
-        Debug.LogError($"[ProductDataManager] 실제 원가를 찾을 수 없음! Type: {product.productType}, OriginalBrand: {product.originalBrand}");
-        return product.originalPrice;
-    }
-
 }

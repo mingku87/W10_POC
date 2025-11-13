@@ -139,6 +139,11 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
         return currentBarcode?.price ?? productData.originalPrice;
     }
 
+    public int GetRealCost()
+    {
+        return currentBarcode?.realCost ?? productData.originalPrice;
+    }
+
     public BarcodeData GetCurrentBarcode()
     {
         return currentBarcode;
@@ -169,7 +174,7 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
         Debug.Log($"[{productData.productName}] 브랜드 UI 업데이트 완료 - 새 가격: {newPrice}원");
     }
 
-    private void UpdateUI()
+    public void UpdateUI()
     {
         if (productData == null) return;
 
