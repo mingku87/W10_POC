@@ -135,6 +135,27 @@ public class POSSystem : MonoBehaviour
         {
             int original = product.productData.originalPrice;
             int current = product.GetCurrentPrice();
+
+            // 가짜 제품인 경우 실제 원가 계산
+            if (product.productData.isFake)
+            {
+                // 가짜 제품의 원래 브랜드(하급)로 실제 원가 계산
+                // originalBrand가 Low면 배율 1.0, High면 1.5
+                float originalMultiplier = product.productData.originalBrand == BrandGrade.Low ? 1.0f : 1.5f;
+                float currentMultiplier = product.productData.currentBrand == BrandGrade.Low ? 1.0f : 1.5f;
+
+                // 실제 하급 원가 = 현재 가짜 originalPrice / 현재 배율 * 원래 배율
+                original = Mathf.RoundToInt(product.productData.originalPrice / currentMultiplier * originalMultiplier);
+
+                Debug.Log($"[POS] 가짜 제품 발견: {product.productData.productName}");
+                Debug.Log($"  - 원래 브랜드: {product.productData.originalBrand} (배율 {originalMultiplier})");
+                Debug.Log($"  - 현재 브랜드: {product.productData.currentBrand} (배율 {currentMultiplier})");
+                Debug.Log($"  - 가짜 originalPrice: {product.productData.originalPrice}원");
+                Debug.Log($"  - 계산된 실제 원가: {original}원");
+                Debug.Log($"  - 판매가: {current}원");
+                Debug.Log($"  - 이익: {current - original}원");
+            }
+
             int itemProfit = current - original;
 
             transactionTotal += current;

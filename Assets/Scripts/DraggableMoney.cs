@@ -56,12 +56,6 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             if (loadedSprite != null)
             {
                 img.sprite = loadedSprite;
-                Debug.Log($"Money sprite loaded: {spriteName}");
-            }
-            else
-            {
-                // 스프라이트 없으면 기본 색상 유지
-                Debug.Log($"Money sprite not found: Sprites/Money/{spriteName} (using default color)");
             }
         }
     }
@@ -71,7 +65,6 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         // 이미 배치된 거스름돈을 다시 드래그하는 경우
         if (isPlacedInDropZone && currentDropZone != null)
         {
-            Debug.Log($"[거스름돈 제거 시작] {moneyAmount}원을 드래그하여 제거합니다.");
             canvasGroup.alpha = 0.6f;
             canvasGroup.blocksRaycasts = false;
             return;
@@ -226,21 +219,17 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        Debug.Log($"[드래그 끝] 마우스 위치에서 Raycast 실행 중...");
 
         // Raycast로 드랍 존 확인
         var results = new System.Collections.Generic.List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
 
-        Debug.Log($"[Raycast] 결과 {results.Count}개 발견:");
         foreach (var result in results)
         {
-            Debug.Log($"  - {result.gameObject.name} (레이어: {result.gameObject.layer})");
 
             ChangeMoneyDropZone dropZone = result.gameObject.GetComponent<ChangeMoneyDropZone>();
             if (dropZone != null)
             {
-                Debug.Log($"[드랍 성공!] ChangeMoneyDropZone 찾음!");
 
                 // 손님이 없으면 드랍 불가
                 if (CheckoutCounter.Instance == null || !CheckoutCounter.Instance.isCustomerWaiting)
@@ -291,13 +280,11 @@ public class DraggableMoney : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
                 rectTransform.anchoredPosition = new Vector2(0, 0);
                 rectTransform.localScale = Vector3.one;
 
-                Debug.Log($"[돈] 거스름돈 영역에 {moneyAmount}원 드랍 완료! Parent: {transform.parent.name}, 위치: {rectTransform.position}");
                 return;
             }
         }
 
         // 드랍 실패 - 복사본 삭제
-        Debug.Log($"[돈] 드랍 실패 - ChangeMoneyDropZone 못 찾음. 복사본 삭제.");
         Destroy(gameObject);
     }
 }

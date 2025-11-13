@@ -208,18 +208,18 @@ public class CheckoutCounter : MonoBehaviour
             // 1. 가짜 돈 이득 (거스름돈으로 가짜 돈 준 금액)
             int fakeMoneyProfit = fakeMoney;
 
-            // 2. 사기 이득 (여러번 스캔해서 얻은 이득)
+            // 2. 전체 사기 이득 (스캔 가격 - 원가) = 중복 스캔 + 가짜 라벨 모두 포함
             int totalOriginalPrice = itemManager.GetTotalOriginalPrice();
-            int scanProfit = itemManager.GetTotalAmount() - totalOriginalPrice;
+            int fraudProfit = itemManager.GetTotalAmount() - totalOriginalPrice;
 
             // 3. 총 이득 = 가짜 돈 + 사기 이득
-            int totalProfit = fakeMoneyProfit + scanProfit;
+            int totalProfit = fakeMoneyProfit + fraudProfit;
 
             if (totalProfit > 0)
             {
                 POSSystem.Instance.walletMoney += totalProfit;
                 POSSystem.Instance.UpdateWalletUI();
-                Debug.Log($"[계산대 - 현금결제] 총 이득 {totalProfit}원을 지갑에 추가! (가짜돈: {fakeMoneyProfit}원, 스캔사기: {scanProfit}원)");
+                Debug.Log($"[계산대 - 현금결제] 총 이득 {totalProfit}원을 지갑에 추가! (가짜돈: {fakeMoneyProfit}원, 사기이득: {fraudProfit}원 [중복스캔+가짜라벨])");
             }
         }
 
@@ -326,14 +326,14 @@ public class CheckoutCounter : MonoBehaviour
         // 카드 결제인 경우만 여기서 이익 추가 (현금 결제는 ValidateChangeAndComplete에서 이미 처리됨)
         if (isCardPayment && POSSystem.Instance != null)
         {
-            // 이익 계산
+            // 전체 사기 이득 (스캔 가격 - 원가) = 중복 스캔 + 가짜 라벨 모두 포함
             int totalOriginalPrice = itemManager.GetTotalOriginalPrice();
-            int profit = itemManager.GetTotalAmount() - totalOriginalPrice;
+            int fraudProfit = itemManager.GetTotalAmount() - totalOriginalPrice;
 
-            POSSystem.Instance.walletMoney += profit;
+            POSSystem.Instance.walletMoney += fraudProfit;
             POSSystem.Instance.UpdateWalletUI();
 
-            Debug.Log($"[계산대 - 카드결제] 사기 이익 {profit}원을 바로 지갑에 추가! (원가: {totalOriginalPrice}원, 받은금액: {itemManager.GetTotalAmount()}원)");
+            Debug.Log($"[계산대 - 카드결제] 사기 이익 {fraudProfit}원을 바로 지갑에 추가! (원가: {totalOriginalPrice}원, 받은금액: {itemManager.GetTotalAmount()}원)");
         }
 
         // 포스기 화면에 결제 완료 표시
