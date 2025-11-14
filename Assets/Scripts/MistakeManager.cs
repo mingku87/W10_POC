@@ -204,6 +204,61 @@ public class MistakeManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 손님 대사 표시 (수상한 행동 감지 시)
+    /// </summary>
+    public void ShowCustomerDialogue(string dialogue)
+    {
+        Debug.Log($"[MistakeManager] ShowCustomerDialogue 호출됨: {dialogue}");
+
+        if (mistakeAllText != null)
+        {
+            Debug.Log($"[MistakeManager] mistakeAllText 찾음! 텍스트 업데이트 중...");
+            mistakeAllText.text = $"💬 {dialogue}";
+            mistakeAllText.color = new Color(1f, 0.7f, 0.3f); // 주황색으로 강조
+
+            // Canvas의 sortingOrder를 최상위로 설정
+            Canvas canvas = mistakeAllText.GetComponentInParent<Canvas>();
+            if (canvas != null)
+            {
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = 32766; // 사기모드(32767)보다 살짝 아래
+                mistakeAllText.transform.SetAsLastSibling();
+                Debug.Log($"[MistakeManager] Canvas sortingOrder를 {canvas.sortingOrder}로 설정!");
+            }
+            else
+            {
+                Debug.LogWarning("[MistakeManager] Canvas를 찾을 수 없습니다!");
+            }
+        }
+        else
+        {
+            Debug.LogError("[MistakeManager] mistakeAllText가 null입니다! Inspector에서 할당했는지 확인하세요!");
+        }
+
+        // 2초 후 자동으로 사라지도록
+        StartCoroutine(ClearDialogueAfterDelay(2f));
+    }
+
+    System.Collections.IEnumerator ClearDialogueAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ClearText();
+
+        // 색상 원래대로 복구
+        if (mistakeAllText != null)
+        {
+            mistakeAllText.color = Color.white;
+        }
+
+        // Canvas sortingOrder 원래대로 복구
+        Canvas canvas = mistakeAllText.GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            canvas.overrideSorting = false;
+        }
+    }
+
+    /// <summary>
     /// 현재 실수 스택 반환 (읽기 전용)
     /// </summary>
     public int GetCurrentMistakeStack()

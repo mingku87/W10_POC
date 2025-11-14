@@ -243,6 +243,7 @@ MonoBehaviour:
   manager: {fileID: 0}
   customerType: 0
   customerImage: {fileID: 3561929458586396477}
+  isDebugMode: 0
   isWaiting: 1
   readyForCheckout: 0
   isOnPhone: 0

@@ -52,6 +52,34 @@ public class Customer : MonoBehaviour
     [Header("수상함 감지")]
     public float suspicionTimePenalty = 20f; // 수상한 행동 시 시간 제한 감소량 (초)
 
+    // 수상한 행동 감지 시 대사 목록
+    private static readonly string[] suspiciousDialogues = new string[]
+    {
+        "지금 뭐하시는 건가요?",
+        "뭐 하는 짓이세요?",
+        "잠깐만요, 이거 이상한데요?",
+        "어? 방금 뭐 하셨어요?",
+        "야, 지금 나한테 사기치는 거야?",
+        "그거 이미 찍으셨잖아요?",
+        "뭔가 수상한데요?",
+        "어... 뭔가 이상한데...",
+        "아니 지금 뭐 하시는거에요?",
+        "야! 뭐하는 거야!"
+    };
+
+    // 금액 초과 시 대사 목록
+    private static readonly string[] overchargeDialogues = new string[]
+    {
+        "왜 이렇게 비싸??",
+        "이거 금액 이상한데요?",
+        "야! 너무 비싼거 아냐?",
+        "이게 무슨 금액이야!",
+        "사기치지 마세요!",
+        "말도 안되는 금액인데?",
+        "아니 이게 얼마야??",
+        "장난해? 가격이 왜 이래?"
+    };
+
     [Header("이동 위치")]
     private Vector2 spawnPos;               // 스폰 위치 (입장/퇴장 위치)
     private Vector2 enterPos;               // 입장 후 쇼핑 위치
@@ -97,14 +125,14 @@ public class Customer : MonoBehaviour
         else if (customerType == CustomerType.Drunk)
         {
             checkoutTimeLimit = Random.Range(50f, 70f); // 취객: 50~70초
-            fraudToleranceMin = 0.7f; // 70%
-            fraudToleranceMax = 0.8f; // 80%
+            fraudToleranceMin = 2.5f; // 250%
+            fraudToleranceMax = 3.0f; // 300%
         }
         else
         {
             checkoutTimeLimit = Random.Range(40f, 50f); // 일반 손님: 40~50초
-            fraudToleranceMin = 0.2f; // 20%
-            fraudToleranceMax = 0.3f; // 30%
+            fraudToleranceMin = 0.8f; // 80%
+            fraudToleranceMax = 1.0f; // 100%
         }
 
         // 현재 손님의 사기 한계를 랜덤하게 설정
@@ -199,8 +227,8 @@ public class Customer : MonoBehaviour
                 }
 
 
-                // 3~6초간 휴대폰 봄
-                yield return new WaitForSeconds(Random.Range(3f, 6f));
+                // 1~2초간 휴대폰 봄
+                yield return new WaitForSeconds(Random.Range(1f, 2f));
 
                 // 휴대폰 그만 봄
                 isOnPhone = false;
@@ -259,6 +287,13 @@ public class Customer : MonoBehaviour
         // 사기 한계 초과 시
         if (overchargeRatio > currentFraudTolerance)
         {
+            // 금액 초과 대사 표시
+            string dialogue = overchargeDialogues[Random.Range(0, overchargeDialogues.Length)];
+            if (MistakeManager.Instance != null)
+            {
+                MistakeManager.Instance.ShowCustomerDialogue(dialogue);
+            }
+
             Debug.Log($"[손님 퇴장] 💰 금액 초과로 화나서 나감! (과금 {overchargeAmount}원 = {overchargeRatio:P1} > 한계 {currentFraudTolerance:P0})");
             LeaveAngry($"금액 초과 ({overchargeAmount}원 초과, {overchargeRatio:P1})");
             return false;
@@ -274,6 +309,9 @@ public class Customer : MonoBehaviour
     public void OnSuspiciousBehaviorDetected(string behaviorType)
     {
         if (!isTimerActive) return; // 타이머가 꺼져있으면 무시
+
+        // 랜덤 대사 선택 및 표시
+        ShowSuspiciousDialogue();
 
         // 수상함 감지 → 시간 제한 감소
         remainingTime -= suspicionTimePenalty;
@@ -291,6 +329,29 @@ public class Customer : MonoBehaviour
         {
             Debug.Log($"[손님 퇴장] ⏰ 수상한 행동으로 인한 시간 초과! ({behaviorType})");
             LeaveAngry($"수상한 행동 감지 후 시간 초과 ({behaviorType})");
+        }
+    }
+
+    /// <summary>
+    /// 수상한 행동 감지 시 랜덤 대사 표시
+    /// </summary>
+    void ShowSuspiciousDialogue()
+    {
+        Debug.Log("[손님 대사] ShowSuspiciousDialogue 호출됨!");
+
+        // 랜덤 대사 선택
+        string dialogue = suspiciousDialogues[Random.Range(0, suspiciousDialogues.Length)];
+        Debug.Log($"[손님 대사] 선택된 대사: \"{dialogue}\"");
+
+        // MistakeManager를 통해 화면에 표시
+        if (MistakeManager.Instance != null)
+        {
+            Debug.Log("[손님 대사] MistakeManager.Instance 찾음!");
+            MistakeManager.Instance.ShowCustomerDialogue(dialogue);
+        }
+        else
+        {
+            Debug.LogError("[손님 대사] MistakeManager.Instance가 null입니다!");
         }
     }
 
@@ -462,20 +523,37 @@ public class Customer : MonoBehaviour
         {
             ProductInteractable selectedProduct = shuffledProducts[i];
 
-            // 개수 결정 (1~3개, 적은 수를 더 높은 확률로)
+            // 전체 상품 개수가 5개 미만일 때만 추가
+            int remainingSlots = 5 - selectedProducts.Count;
+            if (remainingSlots <= 0) break; // 이미 5개 이상이면 중단
+
+            // 개수 결정 (남은 슬롯 범위 내에서 1~3개)
+            int maxQuantity = Mathf.Min(3, remainingSlots);
+
             float randomValue = Random.value;
             int quantity;
-            if (randomValue < 0.5f)
+            if (maxQuantity >= 3)
             {
-                quantity = 1; // 50% 확률
+                if (randomValue < 0.5f)
+                {
+                    quantity = 1; // 50% 확률
+                }
+                else if (randomValue < 0.85f)
+                {
+                    quantity = 2; // 35% 확률
+                }
+                else
+                {
+                    quantity = 3; // 15% 확률
+                }
             }
-            else if (randomValue < 0.85f)
+            else if (maxQuantity == 2)
             {
-                quantity = 2; // 35% 확률
+                quantity = randomValue < 0.6f ? 1 : 2;
             }
             else
             {
-                quantity = 3; // 15% 확률
+                quantity = 1;
             }
 
             for (int j = 0; j < quantity; j++)

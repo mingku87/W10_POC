@@ -86,6 +86,13 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
     {
         if (!isDraggable) return;
 
+        // 사기 모드가 아니면 드래그 불가
+        if (FraudModeController.Instance != null && !FraudModeController.Instance.CanPerformFraud())
+        {
+            //Debug.LogWarning("[브랜드 커버] 사기 모드에서만 사용 가능합니다! (T키를 눌러 활성화)");
+            return;
+        }
+
         isDragging = true;
         hoverTimer = 0f;
         hoveredProduct = null;

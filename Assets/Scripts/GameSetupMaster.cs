@@ -36,6 +36,7 @@ public class GameSetupMaster : MonoBehaviour
         CreateCheckoutCounter(); // 계산대 3D 오브젝트
         CreatePOSSystem(); // POS 시스템
         CreateCustomerSystem();
+        CreateFraudModeController(); // 사기 모드 컨트롤러
 
         Debug.Log("=== UI Generation Complete! Press Play to test ===");
 #endif
@@ -1468,6 +1469,22 @@ public class GameSetupMaster : MonoBehaviour
 
         Debug.Log("5. Customer System created (UI 기반, 작은 크기)");
         Debug.LogWarning("[설정 필요] CustomerManager의 spawnPosition, enterPosition, bellObject를 인스펙터에서 설정하세요!");
+#endif
+    }
+
+    void CreateFraudModeController()
+    {
+#if UNITY_EDITOR
+        // FraudModeController GameObject 생성
+        GameObject fraudModeObj = new GameObject("FraudModeController");
+        FraudModeController fraudController = fraudModeObj.AddComponent<FraudModeController>();
+
+        // 기본 설정
+        fraudController.visionRadius = 250f;
+        fraudController.fadeSize = 150f;
+        fraudController.showDebugInfo = false;
+
+        Debug.Log("8. Fraud Mode Controller created (T키로 사기 모드 활성화/비활성화)");
 #endif
     }
 }

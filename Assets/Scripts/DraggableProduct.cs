@@ -434,6 +434,13 @@ public class DraggableProduct : MonoBehaviour, IBeginDragHandler, IEndDragHandle
             if (BarcodeScanner.Instance != null &&
                 BarcodeScanner.Instance.IsProductInstanceScanned(this))
             {
+                // 사기 모드가 아니면 중복 스캔 차단
+                if (FraudModeController.Instance == null || !FraudModeController.Instance.CanPerformFraud())
+                {
+                    Debug.LogWarning("[경고] 중복 스캔은 사기 모드에서만 가능합니다! (T키를 눌러 활성화)");
+                    return; // 스캔 차단
+                }
+
                 isDuplicateScan = true;
                 Debug.LogWarning("[경고] 동일한 상품을 다시 스캔했습니다! (수상한 행동)");
 
