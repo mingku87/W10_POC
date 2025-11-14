@@ -263,7 +263,20 @@ public class Customer : MonoBehaviour
             // 시간 게이지 업데이트 (1 = 가득참, 0 = 비어있음)
             if (timeGaugeImage != null)
             {
-                timeGaugeImage.fillAmount = remainingTime / checkoutTimeLimit;
+                float fillRatio = remainingTime / checkoutTimeLimit;
+                timeGaugeImage.fillAmount = fillRatio;
+
+                // 게이지 색상 변경: 초록(100%) -> 노랑(50%) -> 빨강(0%)
+                if (fillRatio > 0.5f)
+                {
+                    // 초록 -> 노랑 (100% ~ 50%)
+                    timeGaugeImage.color = Color.Lerp(Color.yellow, Color.green, (fillRatio - 0.5f) * 2f);
+                }
+                else
+                {
+                    // 노랑 -> 빨강 (50% ~ 0%)
+                    timeGaugeImage.color = Color.Lerp(Color.red, Color.yellow, fillRatio * 2f);
+                }
             }
 
             yield return null;
@@ -339,7 +352,20 @@ public class Customer : MonoBehaviour
         // 시간 게이지 업데이트
         if (timeGaugeImage != null && checkoutTimeLimit > 0)
         {
-            timeGaugeImage.fillAmount = Mathf.Clamp01(remainingTime / checkoutTimeLimit);
+            float fillRatio = Mathf.Clamp01(remainingTime / checkoutTimeLimit);
+            timeGaugeImage.fillAmount = fillRatio;
+
+            // 게이지 색상 변경: 초록(100%) -> 노랑(50%) -> 빨강(0%)
+            if (fillRatio > 0.5f)
+            {
+                // 초록 -> 노랑 (100% ~ 50%)
+                timeGaugeImage.color = Color.Lerp(Color.yellow, Color.green, (fillRatio - 0.5f) * 2f);
+            }
+            else
+            {
+                // 노랑 -> 빨강 (50% ~ 0%)
+                timeGaugeImage.color = Color.Lerp(Color.red, Color.yellow, fillRatio * 2f);
+            }
         }
 
         // 시간이 0 이하로 떨어지면 즉시 화내고 나감
