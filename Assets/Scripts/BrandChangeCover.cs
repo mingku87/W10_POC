@@ -305,16 +305,13 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             }
             else
             {
-                // 휴대폰 안 보고 있으면 실수 카운트 증가
-                Debug.Log($"[브랜드 커버] ⚠️ 손님이 보고 있음! 실수 카운트 증가!");
+                // 휴대폰 안 보고 있으면 손님 대사만 표시 (실수 카운트 없음)
+                Debug.Log($"[브랜드 커버] ⚠️ 손님이 보고 있음! 손님 대사 표시!");
 
-                // POSSystem의 실수 카운트 증가
-                if (MistakeManager.Instance != null)
+                // 손님에게 수상한 행동 감지 알림 (대사 표시 + 시간 감소)
+                if (currentCustomer != null)
                 {
-                    MistakeManager.Instance.AddMistake(
-                        MistakeManager.MistakeType.BrandChangeDetected,
-                        "손님이 브랜드 변경 목격"
-                    );
+                    currentCustomer.OnSuspiciousBehaviorDetected("브랜드 변경 목격");
                 }
             }
         }

@@ -50,21 +50,32 @@ public class Customer : MonoBehaviour
     private float currentFraudTolerance;    // 현재 손님의 사기 한계
 
     [Header("수상함 감지")]
-    public float suspicionTimePenalty = 20f; // 수상한 행동 시 시간 제한 감소량 (초)
+    private float suspicionTimePenalty = 20f; // 수상한 행동 시 시간 제한 감소량 (초)
 
-    // 수상한 행동 감지 시 대사 목록
-    private static readonly string[] suspiciousDialogues = new string[]
+    // 브랜드 변경 목격 시 대사 목록
+    private static readonly string[] brandChangeDialogues = new string[]
     {
         "지금 뭐하시는 건가요?",
         "뭐 하는 짓이세요?",
-        "잠깐만요, 이거 이상한데요?",
         "어? 방금 뭐 하셨어요?",
         "야, 지금 나한테 사기치는 거야?",
-        "그거 이미 찍으셨잖아요?",
         "뭔가 수상한데요?",
-        "어... 뭔가 이상한데...",
-        "아니 지금 뭐 하시는거에요?",
-        "야! 뭐하는 거야!"
+        "야! 뭐하는 거야!",
+        "이거 바꾸셨죠?",
+        "라벨 바꾸는거 봤는데요?"
+    };
+
+    // 중복 스캔 목격 시 대사 목록
+    private static readonly string[] duplicateScanDialogues = new string[]
+    {
+        "그거 이미 찍으셨잖아요?",
+        "아까 찍었던건데요?",
+        "두 번 찍으시는거예요?",
+        "이거 중복 아니에요?",
+        "방금 찍었는데 또 찍어요?",
+        "같은거 두번 찍으시네요?",
+        "어? 이거 아까 찍었는데?",
+        "왜 두 번 찍으세요?"
     };
 
     // 금액 초과 시 대사 목록
@@ -310,8 +321,8 @@ public class Customer : MonoBehaviour
     {
         if (!isTimerActive) return; // 타이머가 꺼져있으면 무시
 
-        // 랜덤 대사 선택 및 표시
-        ShowSuspiciousDialogue();
+        // 상황에 맞는 대사 선택 및 표시
+        ShowSuspiciousDialogue(behaviorType);
 
         // 수상함 감지 → 시간 제한 감소
         remainingTime -= suspicionTimePenalty;
@@ -333,20 +344,30 @@ public class Customer : MonoBehaviour
     }
 
     /// <summary>
-    /// 수상한 행동 감지 시 랜덤 대사 표시
+    /// 수상한 행동 감지 시 상황에 맞는 랜덤 대사 표시
     /// </summary>
-    void ShowSuspiciousDialogue()
+    void ShowSuspiciousDialogue(string behaviorType)
     {
-        Debug.Log("[손님 대사] ShowSuspiciousDialogue 호출됨!");
+        string dialogue = "";
 
-        // 랜덤 대사 선택
-        string dialogue = suspiciousDialogues[Random.Range(0, suspiciousDialogues.Length)];
-        Debug.Log($"[손님 대사] 선택된 대사: \"{dialogue}\"");
+        // 상황에 따라 다른 대사 목록 선택
+        if (behaviorType.Contains("브랜드") || behaviorType.Contains("변경") || behaviorType.Contains("목격"))
+        {
+            dialogue = brandChangeDialogues[Random.Range(0, brandChangeDialogues.Length)];
+        }
+        else if (behaviorType.Contains("중복") || behaviorType.Contains("스캔") || behaviorType.Contains("두 번"))
+        {
+            dialogue = duplicateScanDialogues[Random.Range(0, duplicateScanDialogues.Length)];
+        }
+        else
+        {
+            // 기본 대사 (브랜드 변경 대사 사용)
+            dialogue = brandChangeDialogues[Random.Range(0, brandChangeDialogues.Length)];
+        }
 
         // MistakeManager를 통해 화면에 표시
         if (MistakeManager.Instance != null)
         {
-            Debug.Log("[손님 대사] MistakeManager.Instance 찾음!");
             MistakeManager.Instance.ShowCustomerDialogue(dialogue);
         }
         else
@@ -354,7 +375,6 @@ public class Customer : MonoBehaviour
             Debug.LogError("[손님 대사] MistakeManager.Instance가 null입니다!");
         }
     }
-
     void LeaveAngry(string reason = "알 수 없음")
     {
         // 타이머 중지

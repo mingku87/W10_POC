@@ -81,19 +81,23 @@ public class FraudModeController : MonoBehaviour
 
     void CreateVisionOverlay()
     {
-        // Canvas 찾기
-        Canvas canvas = FindFirstObjectByType<Canvas>();
-        if (canvas == null)
-        {
-            Debug.LogError("[사기 모드] Canvas를 찾을 수 없습니다!");
-            return;
-        }
+        // 독립적인 오버레이용 Canvas 생성 (기존 Canvas에 붙이지 않음)
+        GameObject canvasObj = new GameObject("FraudModeCanvas");
+        Canvas overlayCanvas = canvasObj.AddComponent<Canvas>();
+        overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        overlayCanvas.sortingOrder = 1500; // 최상위 레이어
 
-        Debug.Log($"[사기 모드] Canvas 찾음: {canvas.name}");
+        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+
+        canvasObj.AddComponent<GraphicRaycaster>();
+
+        Debug.Log("[사기 모드] 독립 Canvas 생성 완료");
 
         // 메인 오버레이 GameObject 생성
         visionOverlay = new GameObject("FraudModeVisionOverlay");
-        visionOverlay.transform.SetParent(canvas.transform, false);
+        visionOverlay.transform.SetParent(canvasObj.transform, false);
 
         RectTransform overlayRect = visionOverlay.AddComponent<RectTransform>();
         overlayRect.anchorMin = Vector2.zero;
@@ -101,14 +105,9 @@ public class FraudModeController : MonoBehaviour
         overlayRect.offsetMin = Vector2.zero;
         overlayRect.offsetMax = Vector2.zero;
 
-        // CanvasGroup으로 최상위 렌더링 제어
+        // CanvasGroup으로 레이캐스트 차단 안함
         CanvasGroup canvasGroup = visionOverlay.AddComponent<CanvasGroup>();
         canvasGroup.blocksRaycasts = false;
-
-        // Canvas 추가로 최상위 레이어 보장
-        Canvas overlayCanvas = visionOverlay.AddComponent<Canvas>();
-        overlayCanvas.overrideSorting = true;
-        overlayCanvas.sortingOrder = 32767; // int 최대값에 가까운 값
 
         // 검은색 오버레이 (구멍 뚫린 텍스처 사용)
         visionHole = new GameObject("VisionOverlay");
