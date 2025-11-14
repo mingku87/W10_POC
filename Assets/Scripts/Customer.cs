@@ -321,6 +321,13 @@ public class Customer : MonoBehaviour
     {
         if (!isTimerActive) return; // 타이머가 꺼져있으면 무시
 
+        // 휴대폰 보는 중이면 감지하지 않음
+        if (isOnPhone)
+        {
+            //Debug.Log("[손님] 📱 휴대폰 보는 중이라 수상한 행동 감지 못함");
+            return;
+        }
+
         // 상황에 맞는 대사 선택 및 표시
         ShowSuspiciousDialogue(behaviorType);
 
