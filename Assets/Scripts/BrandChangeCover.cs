@@ -100,7 +100,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         Canvas topCanvas = FindOrCreateDragCanvas();
         transform.SetParent(topCanvas.transform, true);
 
-        Debug.Log($"[브랜드 커버] 드래그 시작: {brandData.targetProductType}");
+        //Debug.Log($"[브랜드 커버] 드래그 시작: {brandData.targetProductType}");
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -128,7 +128,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         // 드래그 종료 시점에 제품 위에 있으면 브랜드 변경 실행
         if (hoveredProduct != null && !isProcessing)
         {
-            Debug.Log($"[브랜드 커버] 드래그 종료 - 제품 위에 드롭, 브랜드 변경 시작");
+            //Debug.Log($"[브랜드 커버] 드래그 종료 - 제품 위에 드롭, 브랜드 변경 시작");
             StartCoroutine(ChangeBrand());
         }
         else
@@ -147,7 +147,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
                 layoutElement.ignoreLayout = false;
             }
 
-            Debug.Log($"[브랜드 커버] 드래그 종료 - 원위치 복귀");
+            //Debug.Log($"[브랜드 커버] 드래그 종료 - 원위치 복귀");
         }
     }
 
@@ -194,7 +194,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             {
                 hoveredProduct = foundProduct;
                 hoverTimer = 0f;
-                Debug.Log($"[브랜드 커버] 제품 위 호버 시작: {foundProduct.productData.productName}");
+                //Debug.Log($"[브랜드 커버] 제품 위 호버 시작: {foundProduct.productData.productName}");
             }
         }
         else
@@ -202,7 +202,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             // 호버 해제
             if (hoveredProduct != null)
             {
-                Debug.Log($"[브랜드 커버] 호버 해제");
+                //Debug.Log($"[브랜드 커버] 호버 해제");
                 hoveredProduct = null;
                 hoverTimer = 0f;
             }
@@ -300,12 +300,12 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             if (currentCustomer.isOnPhone)
             {
                 // 휴대폰 보는 중이면 실수 감지 안됨
-                Debug.Log($"[브랜드 커버] ✅ 손님이 휴대폰을 보는 중! 브랜드 변경 성공!");
+                //Debug.Log($"[브랜드 커버] ✅ 손님이 휴대폰을 보는 중! 브랜드 변경 성공!");
             }
             else
             {
                 // 휴대폰 안 보고 있으면 손님 대사만 표시 (실수 카운트 없음)
-                Debug.Log($"[브랜드 커버] ⚠️ 손님이 보고 있음! 손님 대사 표시!");
+                //Debug.Log($"[브랜드 커버] ⚠️ 손님이 보고 있음! 손님 대사 표시!");
 
                 // 손님에게 수상한 행동 감지 알림 (대사 표시 + 시간 감소)
                 if (currentCustomer != null)
@@ -332,11 +332,11 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         // UI 갱신
         hoveredProduct.UpdateUI();
 
-        Debug.Log($"[브랜드 커버] 브랜드 변경 완료!");
-        Debug.Log($"  - 제품: {hoveredProduct.productData.productName}");
-        Debug.Log($"  - 원래 브랜드: {hoveredProduct.productData.originalBrand} (실제 원가: {originalRealCost}원)");
-        Debug.Log($"  - 가짜 브랜드: {hoveredProduct.productData.currentBrand} (판매가: {fakePrice}원)");
-        Debug.Log($"  - 이익: {fakePrice - originalRealCost}원");
+        //Debug.Log($"[브랜드 커버] 브랜드 변경 완료!");
+        //Debug.Log($"  - 제품: {hoveredProduct.productData.productName}");
+        //Debug.Log($"  - 원래 브랜드: {hoveredProduct.productData.originalBrand} (실제 원가: {originalRealCost}원)");
+        //Debug.Log($"  - 가짜 브랜드: {hoveredProduct.productData.currentBrand} (판매가: {fakePrice}원)");
+        //Debug.Log($"  - 이익: {fakePrice - originalRealCost}원");
 
         // 성공 효과
         if (BrandChangeZone.Instance != null)
@@ -385,7 +385,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             // 복사본을 제품 위에 표시
             labelCopy.transform.SetAsLastSibling();
 
-            Debug.Log($"[브랜드 커버] 라벨 복사본 생성 및 제품에 부착 완료");
+            //Debug.Log($"[브랜드 커버] 라벨 복사본 생성 및 제품에 부착 완료");
         }
 
         // 원본 라벨은 원위치로 복귀
@@ -407,7 +407,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
         isProcessing = false;
 
-        Debug.Log($"[브랜드 커버] 원본 라벨 원위치 복귀 완료");
+        //Debug.Log($"[브랜드 커버] 원본 라벨 원위치 복귀 완료");
     }
 
     /// <summary>

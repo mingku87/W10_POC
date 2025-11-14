@@ -198,29 +198,37 @@ public class CheckoutCounter : MonoBehaviour
         {
             MistakeManager.Instance.AddMistake(
                 MistakeManager.MistakeType.ChangeAmountMistake,
-                $"거스름돈 오류: 예상 {totalGivenChange}원"
+                $"거스름돈 오류: 예상 {expectedChange}원, 실제 {totalGivenChange}원"
             );
         }
 
-        // 현금 결제 총 이득 계산 및 지갑에 추가 (실수 여부와 관계없이 이득은 챙김)
-        if (POSSystem.Instance != null)
+        // 거스름돈 계산이 틀렸으면 지갑에 아무것도 안 들어감 (손님이 화내고 나감)
+        if (!hasMistake)
         {
-            // 1. 가짜 돈 이득 (거스름돈으로 가짜 돈 준 금액)
-            int fakeMoneyProfit = fakeMoney;
-
-            // 2. 전체 사기 이득 (스캔 가격 - 원가) = 중복 스캔 + 가짜 라벨 모두 포함
-            int totalOriginalPrice = itemManager.GetTotalOriginalPrice();
-            int fraudProfit = itemManager.GetTotalAmount() - totalOriginalPrice;
-
-            // 3. 총 이득 = 가짜 돈 + 사기 이득
-            int totalProfit = fakeMoneyProfit + fraudProfit;
-
-            if (totalProfit > 0)
+            // 현금 결제 총 이득 계산 및 지갑에 추가
+            if (POSSystem.Instance != null)
             {
-                POSSystem.Instance.walletMoney += totalProfit;
-                POSSystem.Instance.UpdateWalletUI();
-                Debug.Log($"💰 [계산 완료] 총 {itemManager.GetTotalAmount()}원 결제 → 지갑에 {totalProfit}원 추가! (가짜돈: {fakeMoneyProfit}원, 사기이득: {fraudProfit}원 [중복스캔+가짜라벨])");
+                // 1. 가짜 돈 이득 (거스름돈으로 가짜 돈 준 금액)
+                int fakeMoneyProfit = fakeMoney;
+
+                // 2. 전체 사기 이득 (스캔 가격 - 원가) = 중복 스캔 + 가짜 라벨 모두 포함
+                int totalOriginalPrice = itemManager.GetTotalOriginalPrice();
+                int fraudProfit = itemManager.GetTotalAmount() - totalOriginalPrice;
+
+                // 3. 총 이득 = 가짜 돈 + 사기 이득
+                int totalProfit = fakeMoneyProfit + fraudProfit;
+
+                if (totalProfit > 0)
+                {
+                    POSSystem.Instance.walletMoney += totalProfit;
+                    POSSystem.Instance.UpdateWalletUI();
+                    Debug.Log($"💰 [계산 완료] 총 {itemManager.GetTotalAmount()}원 결제 → 지갑에 {totalProfit}원 추가! (가짜돈: {fakeMoneyProfit}원, 사기이득: {fraudProfit}원 [중복스캔+가짜라벨])");
+                }
             }
+        }
+        else
+        {
+            Debug.Log($"⚠️ [계산 실패] 거스름돈 계산 오류로 인해 지갑에 추가되지 않음 (손님이 화내고 나감)");
         }
 
         ProcessCheckout();
@@ -277,6 +285,8 @@ public class CheckoutCounter : MonoBehaviour
             //Debug.Log("[계산 검증] ProductType + BrandGrade 기반 검증 시작");
             //Debug.Log("───────────────────────────────────");
 
+            List<string> wrongProductMessages = new List<string>(); // 잘못된 상품 메시지 리스트
+
             foreach (var wanted in wantedProducts)
             {
                 string typeGrade = wanted.Key;
@@ -288,7 +298,8 @@ public class CheckoutCounter : MonoBehaviour
                 if (scannedCount < wantedCount)
                 {
                     hasWrongProduct = true;
-                    //Debug.LogWarning($"[검증 실패] {typeGrade} 부족! (필요: {wantedCount}, 스캔: {scannedCount})");
+                    wrongProductMessages.Add($"{typeGrade}: 필요 {wantedCount}개, 스캔 {scannedCount}개 (부족)");
+                    Debug.LogWarning($"[검증 실패] {typeGrade} 부족! (필요: {wantedCount}, 스캔: {scannedCount})");
                 }
             }
 
@@ -302,7 +313,8 @@ public class CheckoutCounter : MonoBehaviour
                 if (scannedCount > wantedCount)
                 {
                     hasWrongProduct = true;
-                    //Debug.LogWarning($"[검증 실패] {typeGrade} 초과! (필요: {wantedCount}, 스캔: {scannedCount})");
+                    wrongProductMessages.Add($"{typeGrade}: 필요 {wantedCount}개, 스캔 {scannedCount}개 (초과)");
+                    Debug.LogWarning($"[검증 실패] {typeGrade} 초과! (필요: {wantedCount}, 스캔: {scannedCount})");
                 }
             }
 
@@ -311,11 +323,14 @@ public class CheckoutCounter : MonoBehaviour
             // 잘못된 상품이 있으면 실수 카운트 1회
             if (hasWrongProduct && MistakeManager.Instance != null)
             {
+                // 상세 메시지 조합
+                string detailMessage = "계산대에 잘못된 상품 포함\n" + string.Join("\n", wrongProductMessages);
+
                 MistakeManager.Instance.AddMistake(
                     MistakeManager.MistakeType.WrongProductInCheckout,
-                    "계산대에 잘못된 상품 포함"
+                    detailMessage
                 );
-                //Debug.LogWarning("[계산 검증] 잘못된 상품이 포함되어 실수 카운트 +1");
+                Debug.LogWarning($"[계산 검증] 잘못된 상품이 포함되어 실수 카운트 +1\n{detailMessage}");
             }
             else
             {
@@ -413,7 +428,7 @@ public class CheckoutCounter : MonoBehaviour
             BarcodeScanner.Instance.ResetScannedProducts();
         }
 
-        Debug.Log("[계산대] 계산대 정리 완료");
+        // Debug.Log("[계산대] 계산대 정리 완료");
     }
 
     void UpdateTotalDisplay()

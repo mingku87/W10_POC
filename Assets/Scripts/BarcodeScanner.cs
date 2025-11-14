@@ -109,7 +109,7 @@ public class BarcodeScanner : MonoBehaviour, IDropHandler
             }
         }
 
-        Debug.Log("[스캔 존] 스캔 내역 및 상품 초기화");
+        // Debug.Log("[스캔 존] 스캔 내역 및 상품 초기화");
     }
 
     /// <summary>

@@ -334,6 +334,13 @@ public class Customer : MonoBehaviour
     {
         if (!isTimerActive) return; // 타이머가 꺼져있으면 무시
 
+        // 취객은 사기 행위를 감지하지 못함
+        if (customerType == CustomerType.Drunk)
+        {
+            //Debug.Log("[손님] 🍺 취객이라 수상한 행동 감지 못함");
+            return;
+        }
+
         // 휴대폰 보는 중이면 감지하지 않음
         if (isOnPhone)
         {
