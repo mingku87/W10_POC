@@ -65,7 +65,7 @@ public class CustomerZone : MonoBehaviour, IDropHandler
 
         UpdateItemCountUI();
 
-        Debug.Log($"[손님 존] 초기화 완료 - 배치 모드: {(useFreePositioning ? "자유 배치" : "Grid 정렬")}");
+        // Debug.Log($"[손님 존] 초기화 완료 - 배치 모드: {(useFreePositioning ? "자유 배치" : "Grid 정렬")}");
     }
 
     // IDropHandler 구현

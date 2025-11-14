@@ -93,7 +93,7 @@ public class CustomerManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("[매니저] 계산대에 손님이 있어서 입장 대기 중...");
+                // Debug.Log("[매니저] 계산대에 손님이 있어서 입장 대기 중...");
             }
         }
     }
@@ -254,31 +254,31 @@ public class CustomerManager : MonoBehaviour
         if (normalSprite == null)
         {
             normalSprite = Resources.Load<Sprite>("Sprites/Customers/normal");
-            if (normalSprite != null) Debug.Log("Normal sprite loaded from Resources");
+            // if (normalSprite != null) Debug.Log("Normal sprite loaded from Resources");
         }
 
         if (drunkSprite == null)
         {
             drunkSprite = Resources.Load<Sprite>("Sprites/Customers/drunk");
-            if (drunkSprite != null) Debug.Log("Drunk sprite loaded from Resources");
+            // if (drunkSprite != null) Debug.Log("Drunk sprite loaded from Resources");
         }
 
         if (onPhoneSprite == null)
         {
             onPhoneSprite = Resources.Load<Sprite>("Sprites/Customers/onphone");
-            if (onPhoneSprite != null) Debug.Log("OnPhone sprite loaded from Resources");
+            // if (onPhoneSprite != null) Debug.Log("OnPhone sprite loaded from Resources");
         }
 
         if (angryNormalSprite == null)
         {
             angryNormalSprite = Resources.Load<Sprite>("Sprites/Customers/angry_normal");
-            if (angryNormalSprite != null) Debug.Log("Angry Normal sprite loaded from Resources");
+            // if (angryNormalSprite != null) Debug.Log("Angry Normal sprite loaded from Resources");
         }
 
         if (angryDrunkSprite == null)
         {
             angryDrunkSprite = Resources.Load<Sprite>("Sprites/Customers/angry_drunk");
-            if (angryDrunkSprite != null) Debug.Log("Angry Drunk sprite loaded from Resources");
+            // if (angryDrunkSprite != null) Debug.Log("Angry Drunk sprite loaded from Resources");
         }
     }
 }

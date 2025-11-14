@@ -47,7 +47,7 @@ public class BrandChangeZone : MonoBehaviour
 
         UpdateStatusText("브랜드 변경 존\nBrandChangeCover를 사용하세요");
 
-        Debug.Log("[브랜드 변경 존] 초기화 완료 (수동 모드)");
+        // Debug.Log("[브랜드 변경 존] 초기화 완료 (수동 모드)");
     }
 
     /// <summary>

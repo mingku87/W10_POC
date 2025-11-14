@@ -252,25 +252,25 @@ public class FraudModeController : MonoBehaviour
     {
         isFraudModeActive = active;
 
-        Debug.Log($"[사기 모드] SetFraudMode 호출됨: {active}, visionOverlay: {visionOverlay != null}");
+        // Debug.Log($"[사기 모드] SetFraudMode 호출됨: {active}, visionOverlay: {visionOverlay != null}");
 
         if (visionOverlay != null)
         {
             visionOverlay.SetActive(active);
-            Debug.Log($"[사기 모드] visionOverlay.SetActive({active}) 실행됨");
+            // Debug.Log($"[사기 모드] visionOverlay.SetActive({active}) 실행됨");
         }
         else
         {
-            Debug.LogError("[사기 모드] visionOverlay가 null입니다!");
+            // Debug.LogError("[사기 모드] visionOverlay가 null입니다!");
         }
 
         if (active)
         {
-            Debug.Log("🎭 [사기 모드] 활성화! 시야가 제한됩니다. 조심하세요!");
+            // Debug.Log("🎭 [사기 모드] 활성화! 시야가 제한됩니다. 조심하세요!");
         }
         else
         {
-            Debug.Log("✅ [사기 모드] 비활성화! 정상 시야로 복귀합니다.");
+            // Debug.Log("✅ [사기 모드] 비활성화! 정상 시야로 복귀합니다.");
         }
     }
 

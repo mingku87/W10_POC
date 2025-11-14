@@ -41,7 +41,7 @@ public class ProductDetailPanel : MonoBehaviour
         if (closeButton != null)
             closeButton.onClick.AddListener(ClosePanel);
 
-        Debug.Log("ProductDetailPanel 초기화 완료");
+        // Debug.Log("ProductDetailPanel 초기화 완료");
     }
 
     public void ShowProduct(ProductInteractable product)

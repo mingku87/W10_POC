@@ -67,7 +67,7 @@ public class ProductUISpawner : MonoBehaviour
             SpawnProductButton(product);
         }
 
-        Debug.Log($"[ProductUISpawner] {products.Count}개 제품 UI 생성 완료");
+        // Debug.Log($"[ProductUISpawner] {products.Count}개 제품 UI 생성 완료");
     }
 
     /// <summary>
@@ -216,7 +216,7 @@ public class ProductUISpawner : MonoBehaviour
 
         spawnedBrandCovers.Add(coverObj);
 
-        Debug.Log($"[ProductUISpawner] BrandCover 생성: {brandData.targetProductType}");
+        // Debug.Log($"[ProductUISpawner] BrandCover 생성: {brandData.targetProductType}");
     }
 
     /// <summary>

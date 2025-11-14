@@ -61,7 +61,7 @@ public class ProductInteractable : MonoBehaviour, IPointerClickHandler
 
         isInitialized = true;
 
-        Debug.Log($"[{productData.productName}] 초기화 완료 - 브랜드: {productData.currentBrand.ToKoreanName()}, 가격: {initialPrice}원, 가짜: {productData.isFake}");
+        // Debug.Log($"[{productData.productName}] 초기화 완료 - 브랜드: {productData.currentBrand.ToKoreanName()}, 가격: {initialPrice}원, 가짜: {productData.isFake}");
     }
 
     /// <summary>

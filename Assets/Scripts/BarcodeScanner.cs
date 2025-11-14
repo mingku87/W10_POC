@@ -41,7 +41,7 @@ public class BarcodeScanner : MonoBehaviour, IDropHandler
             scannerImage.color = scanReadyColor;
         }
 
-        Debug.Log("[스캔 존] 초기화 완료 - 상품을 여기로 드래그하여 스캔하세요!");
+        // Debug.Log("[스캔 존] 초기화 완료 - 상품을 여기로 드래그하여 스캔하세요!");
     }
 
     // IDropHandler 구현 - DraggableProduct에서 자체 처리하므로 여기선 비워둠
