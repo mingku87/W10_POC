@@ -46,18 +46,7 @@ public class FraudModeController : MonoBehaviour
 
     void Start()
     {
-        Debug.Log("[사기 모드] FraudModeController 초기화 시작");
         CreateVisionOverlay();
-
-        if (visionOverlay != null)
-        {
-            Debug.Log("[사기 모드] Vision Overlay 생성 완료!");
-        }
-        else
-        {
-            Debug.LogError("[사기 모드] Vision Overlay 생성 실패!");
-        }
-
         SetFraudMode(false); // 시작 시 비활성화
     }
 
@@ -93,7 +82,7 @@ public class FraudModeController : MonoBehaviour
 
         canvasObj.AddComponent<GraphicRaycaster>();
 
-        Debug.Log("[사기 모드] 독립 Canvas 생성 완료");
+        // Debug.Log("[사기 모드] 독립 Canvas 생성 완료");
 
         // 메인 오버레이 GameObject 생성
         visionOverlay = new GameObject("FraudModeVisionOverlay");
@@ -125,14 +114,14 @@ public class FraudModeController : MonoBehaviour
         // 초기 텍스처 생성 (화면 중앙에 구멍)
         UpdateVisionTexture(new Vector2(Screen.width / 2, Screen.height / 2));
 
-        Debug.Log("[사기 모드] 시야 제한 오버레이 생성 완료");
+        // Debug.Log("[사기 모드] 시야 제한 오버레이 생성 완료");
 
         // 안내 텍스트 생성
         CreateModeText(visionOverlay.transform);
 
         visionOverlay.SetActive(false);
 
-        Debug.Log("[사기 모드] Vision Overlay 생성 완료");
+        // Debug.Log("[사기 모드] Vision Overlay 생성 완료");
     }
 
     void CreateModeText(Transform parent)

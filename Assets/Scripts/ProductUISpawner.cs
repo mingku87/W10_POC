@@ -26,7 +26,7 @@ public class ProductUISpawner : MonoBehaviour
 
     [Header("레이아웃 설정")]
     [SerializeField] private float spacing = 10f; // 버튼 간 간격
-    [SerializeField] private Vector2 brandCoverSize = new Vector2(80, 80); // 브랜드 커버 크기
+    private Vector2 brandCoverSize = new Vector2(50, 50); // 브랜드 커버 크기
 
     private List<GameObject> spawnedButtons = new List<GameObject>();
     private List<GameObject> spawnedBrandCovers = new List<GameObject>();
@@ -89,7 +89,7 @@ public class ProductUISpawner : MonoBehaviour
 
         if (brandCoverPrefab == null)
         {
-            Debug.LogWarning("[ProductUISpawner] Brand Cover Prefab이 할당되지 않았습니다! BrandChangeCover를 생성하지 않습니다.");
+            // Debug.LogWarning("[ProductUISpawner] Brand Cover Prefab이 할당되지 않았습니다! BrandChangeCover를 생성하지 않습니다.");
             return;
         }
 
@@ -105,7 +105,7 @@ public class ProductUISpawner : MonoBehaviour
             SpawnBrandCover(brand);
         }
 
-        Debug.Log($"[ProductUISpawner] {brands.Count}개 BrandChangeCover UI 생성 완료");
+        // Debug.Log($"[ProductUISpawner] {brands.Count}개 BrandChangeCover UI 생성 완료");
     }
 
     /// <summary>
@@ -191,11 +191,21 @@ public class ProductUISpawner : MonoBehaviour
         GameObject coverObj = Instantiate(brandCoverPrefab, brandCoverParent);
         coverObj.name = $"BrandCover_{brandData.targetProductType}";
 
-        // 크기 설정
+        // 크기 설정 (강제 적용)
         RectTransform rectTransform = coverObj.GetComponent<RectTransform>();
         if (rectTransform != null)
         {
-            rectTransform.sizeDelta = brandCoverSize;
+            // 앵커와 피벗 설정
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+
+            // 크기 설정
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, brandCoverSize.x);
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, brandCoverSize.y);
+
+            // 스케일
+            rectTransform.localScale = Vector3.one;
         }
 
         // Image 설정

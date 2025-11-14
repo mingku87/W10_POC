@@ -58,11 +58,6 @@ public class MistakeManager : MonoBehaviour
         {
             gameOverPanel.SetActive(false);
         }
-
-        if (showDebugLogs)
-        {
-            Debug.Log("[MistakeManager] 실수 관리 시스템 초기화 완료");
-        }
     }
 
     /// <summary>

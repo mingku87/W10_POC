@@ -21,8 +21,6 @@ public class CheckoutDisplayManager : MonoBehaviour
 		counterItemsCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
 		counterItemsCanvas.sortingOrder = 100;
 		canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
-
-		Debug.Log("[DisplayManager] 초기화 완료");
 	}
 
 	public void DisplayScannedItem(ProductInteractable product)

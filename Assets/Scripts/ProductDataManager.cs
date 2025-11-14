@@ -68,7 +68,7 @@ public class ProductDataManager : MonoBehaviour
             }
         }
 
-        Debug.Log($"[ProductDataManager] 초기화 완료 - 총 {productDict.Count}개 제품 등록");
+        // Debug.Log($"[ProductDataManager] 초기화 완료 - 총 {productDict.Count}개 제품 등록");
     }
 
     /// <summary>

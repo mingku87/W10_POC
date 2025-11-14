@@ -23,7 +23,6 @@ public class POSMachineDisplay : MonoBehaviour
         {
             cashDrawerButton.onClick.RemoveAllListeners();
             cashDrawerButton.onClick.AddListener(ToggleCashDrawer);
-            Debug.Log("[POSMachineDisplay] 현금통 버튼 연결됨!");
         }
         else
         {

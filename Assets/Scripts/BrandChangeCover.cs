@@ -69,17 +69,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
     void Update()
     {
-        // 드래그 중이고, 제품 위에 호버 중일 때
-        if (isDragging && hoveredProduct != null && !isProcessing)
-        {
-            hoverTimer += Time.deltaTime;
-
-            // 일정 시간 이상 호버하면 브랜드 변경
-            if (hoverTimer >= hoverDelay)
-            {
-                StartCoroutine(ChangeBrand());
-            }
-        }
+        // Update에서 자동 브랜드 변경 제거 - OnEndDrag에서 처리
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -131,25 +121,34 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
     {
         if (!isDraggable) return;
 
-        isDragging = false;
-        hoverTimer = 0f;
-        hoveredProduct = null;
-
+        // 투명도 100%로 복원
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        // 부모 복귀 (로컬 좌표 유지)
-        transform.SetParent(originalParent, false);
-
-        // LayoutElement 재활성화
-        if (layoutElement != null)
+        // 드래그 종료 시점에 제품 위에 있으면 브랜드 변경 실행
+        if (hoveredProduct != null && !isProcessing)
         {
-            layoutElement.ignoreLayout = false;
+            Debug.Log($"[브랜드 커버] 드래그 종료 - 제품 위에 드롭, 브랜드 변경 시작");
+            StartCoroutine(ChangeBrand());
         }
+        else
+        {
+            // 제품 위가 아니면 그냥 원위치로 복귀
+            isDragging = false;
+            hoverTimer = 0f;
+            hoveredProduct = null;
 
-        // LayoutGroup에게 위치를 맡김 - 수동 위치 설정 제거!
+            // 부모 복귀 (로컬 좌표 유지)
+            transform.SetParent(originalParent, false);
 
-        Debug.Log($"[브랜드 커버] 드래그 종료");
+            // LayoutElement 재활성화
+            if (layoutElement != null)
+            {
+                layoutElement.ignoreLayout = false;
+            }
+
+            Debug.Log($"[브랜드 커버] 드래그 종료 - 원위치 복귀");
+        }
     }
 
     /// <summary>
@@ -345,7 +344,51 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
             BrandChangeZone.Instance.ShowSuccessEffect(hoveredProduct.transform.position);
         }
 
-        // 커버 사용 후 원위치로 복귀
+        // 라벨의 복사본을 만들어서 제품에 부착
+        ProductInteractable attachedProduct = hoveredProduct;
+        if (attachedProduct != null)
+        {
+            // 복사본 생성
+            GameObject labelCopy = Instantiate(gameObject, attachedProduct.transform);
+
+            // 복사본의 RectTransform 설정
+            RectTransform copyRect = labelCopy.GetComponent<RectTransform>();
+            if (copyRect != null)
+            {
+                // 현재 드래그 중인 라벨의 위치를 복사본에 적용
+                copyRect.position = rectTransform.position;
+                copyRect.localScale = Vector3.one;
+            }
+
+            // 복사본의 BrandChangeCover 컴포넌트 비활성화 (더 이상 드래그 불가)
+            BrandChangeCover copyScript = labelCopy.GetComponent<BrandChangeCover>();
+            if (copyScript != null)
+            {
+                copyScript.isDraggable = false;
+                copyScript.enabled = false;
+            }
+
+            // 복사본의 CanvasGroup 투명도 100%로 설정
+            CanvasGroup copyCanvasGroup = labelCopy.GetComponent<CanvasGroup>();
+            if (copyCanvasGroup != null)
+            {
+                copyCanvasGroup.alpha = 1f;
+            }
+
+            // 복사본의 LayoutElement 제거 (제품의 자식이므로 레이아웃 영향 받지 않음)
+            LayoutElement copyLayout = labelCopy.GetComponent<LayoutElement>();
+            if (copyLayout != null)
+            {
+                Destroy(copyLayout);
+            }
+
+            // 복사본을 제품 위에 표시
+            labelCopy.transform.SetAsLastSibling();
+
+            Debug.Log($"[브랜드 커버] 라벨 복사본 생성 및 제품에 부착 완료");
+        }
+
+        // 원본 라벨은 원위치로 복귀
         isDragging = false;
         hoveredProduct = null;
         hoverTimer = 0f;
@@ -353,10 +396,10 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
-        // 원위치로 복귀 (월드 좌표 복원)
-        transform.SetParent(originalParent, false);  // 월드 좌표 유지하면서 부모 설정
+        // 부모 복귀
+        transform.SetParent(originalParent, false);
 
-        // LayoutElement가 있으면 재활성화
+        // LayoutElement 재활성화
         if (layoutElement != null)
         {
             layoutElement.ignoreLayout = false;
@@ -364,7 +407,7 @@ public class BrandChangeCover : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
         isProcessing = false;
 
-        Debug.Log($"[브랜드 커버] 사용 완료, 원위치 복귀");
+        Debug.Log($"[브랜드 커버] 원본 라벨 원위치 복귀 완료");
     }
 
     /// <summary>

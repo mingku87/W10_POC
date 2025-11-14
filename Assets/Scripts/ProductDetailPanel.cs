@@ -27,7 +27,7 @@ public class ProductDetailPanel : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            Debug.Log("ProductDetailPanel Instance 생성됨");
+            // Debug.Log("ProductDetailPanel Instance 생성됨");
         }
         else
         {
